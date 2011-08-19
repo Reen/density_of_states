@@ -1,0 +1,44 @@
+cmake_minimum_required(VERSION 2.6)
+
+project( dostoy )
+set (dostoy_VERSION_MAJOR 1 )
+set (dostoy_VERSION_MINOR 0 )
+
+list(APPEND CMAKE_MODULE_PATH "/Users/rhab/usr/share/cmake/rpavlik/")
+include(GetGitRevisionDescription)
+get_git_head_revision(GIT_REFSPEC GIT_SHA1)
+
+configure_file(
+	"${CMAKE_CURRENT_SOURCE_DIR}/GitSHA1.cpp.in"
+	"${CMAKE_CURRENT_BINARY_DIR}/GitSHA1.cpp" @ONLY
+)
+set(SOURCES main.cpp)
+list(APPEND SOURCES "${CMAKE_CURRENT_BINARY_DIR}/GitSHA1.cpp" "${CMAKE_SOURCE_DIR}/include/GitSHA1.h")
+
+configure_file (
+	"${PROJECT_SOURCE_DIR}/config.h.in"
+	"${PROJECT_BINARY_DIR}/config.h"
+)
+
+include_directories("${PROJECT_BINARY_DIR}")
+include_directories("${CMAKE_SOURCE_DIR}/include")
+
+#Boost Library
+set( Boost_USE_STATIC_LIBS ON )
+set( Boost_USE_MULTITHREAD ON )
+
+find_package( Boost COMPONENTS program_options REQUIRED )
+
+if( NOT Boost_FOUND )
+	message( fatal_error "Cannot build without boost. Please install the boost library first." )
+endif( NOT Boost_FOUND )
+
+include_directories( ${Boost_INCLUDE_DIRS} )
+
+
+# TARGET: dos #################
+add_executable( dos ${SOURCES} )
+target_link_libraries( dos ${Boost_LIBRARIES} )
+
+set_property(TARGET dos PROPERTY OUTPUT_NAME_DEBUG "dos_debug")
+set_property(TARGET dos PROPERTY RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}")
