@@ -1,0 +1,9 @@
+debug
+release
+*.swp
+distrib
+*_debug
+graph
+dos
+rng_state
+
