@@ -202,7 +202,7 @@ public:
 
 	void check(const size_t & step, const size_t &run) {
 		//T = 2 - (1.9 * step/1e7);
-		T = sin(step/2e5)+1.1;
+		//T = sin(step/2e5)+1.1;
 	}
 };
 
