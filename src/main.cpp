@@ -13,12 +13,14 @@
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>
 #include <boost/numeric/ublas/io.hpp>
+#include <boost/program_options.hpp>
 #include <boost/cstdint.hpp>
 #include "config.h"
 #include "GitSHA1.h"
 
 #define VERBOSE 0
 
+namespace po = boost::program_options;
 namespace ublas = boost::numeric::ublas;
 typedef boost::numeric::ublas::vector<int> vector_int_t;
 typedef boost::numeric::ublas::vector<double> vector_double_t;
@@ -270,46 +272,124 @@ public:
 
 int main(int argc, const char *argv[])
 {
-	const size_t macro_states = 4;
-	const size_t steps = 10000000;
-	const size_t runs = 1000;
+	// Variables set by program_options
+	size_t macro_states = 4;
+	size_t steps = 10000000;
+	size_t runs = 1000;
+	size_t connections;
+	double T = 2.0;
+	std::string tag;
 	const double kB = 1.0;
-	const double T = 2.0;
 	const size_t error_check_f = 1000;
+	size_t sampler = 0;
+	boost::mt19937 rng;
+	std::vector<std::string> sampler_string;
+	sampler_string.push_back("BM");
+	sampler_string.push_back("WL");
+
+	// parse argc / argv
+	try {
+		po::options_description desc("Allowed options");
+		desc.add_options()
+			("help", "produce help message")
+			("macrostates,M", po::value<size_t>(&macro_states)->default_value(4), "Number of macrostates")
+			("steps,S",       po::value<size_t>(&steps)->default_value(1000000),  "Number of steps per simulation")
+			("runs,R",        po::value<size_t>(&runs)->default_value(1000),      "Number of simulations")
+			("connections,C", po::value<size_t>(&connections)->default_value(3),  "Number of per-microstate connections")
+			("temperature,T", po::value<double>(&T)->default_value(2.0),          "Temperature")
+			("tag",           po::value<std::string>(&tag),                       "Additional tag to append to files")
+			("seed",          po::value<size_t>(),                                "Random seed")
+			("sampler",       po::value<size_t>(&sampler)->default_value(1),      "Sampler to use: 0 - Boltzmann, 1 - WangLandau")
+			;
+		po::variables_map vm;
+		po::store(po::parse_command_line(argc, argv, desc), vm);
+		po::notify(vm);
+
+		if (vm.count("help")) {
+			std::cout << "density of states toy "
+				<< VERSION_MAJOR << "." << VERSION_MINOR
+				<< "-" << g_GIT_SHA1 << std::endl;
+			std::cout << desc << std::endl;
+			return 1;
+		}
+
+		size_t seed;
+		if (vm.count("seed")) {
+			seed = vm["help"].as<size_t>();
+		} else {
+			FILE* devran = fopen("/dev/urandom", "rb");
+			fread(&seed, sizeof(size_t), 1, devran);
+			fclose(devran);
+		}
+		std::cout << "random seed: " << seed << std::endl;
+		rng.seed(seed);
+	} catch(std::exception& e) {
+		std::cerr << "error: " << e.what() << "\n";
+		return 1;
+	} catch(...) {
+		std::cerr << "Exception of unknown type!\n";
+	}
+
 	// safety check
 	if (steps % error_check_f != 0) {
-		std::cerr << "Error check frequency and number of steps don't match" << std::endl;
+		std::cerr << "Error: check-frequency and number of steps don't match" << std::endl;
 		exit(1);
 	}
+
+	// mean & variance accumulators
 	vector_double_t error_acc(steps / error_check_f);
 	vector_double_t error_acc2(steps / error_check_f);
 	vector_double_t error_s_acc(steps / error_check_f);
 	vector_double_t error_s_acc2(steps / error_check_f);
+
+	// set to zero
 	error_acc *= 0;
 	error_acc2 *= 0;
 	error_s_acc *= 0;
 	error_s_acc2 *= 0;
+
+	// calculate an exact density of states
 	vector_int_t dos_exact = get_exact_dos(macro_states);
 	size_t Nconfig = sum(dos_exact);
 	vector_double_t dos_exact_norm = dos_exact / static_cast<double>(Nconfig);
 	vector_int_t config_to_energy = get_energy_map(dos_exact, Nconfig);
-	std::cout << "dos_exact: " << dos_exact << std::endl;
-	std::cout << "dos_exact_norm: " << dos_exact_norm << std::endl;
-	std::cout << "config_to_energy: " << config_to_energy << std::endl;
-	boost::mt19937 rng;
-	{
-		std::ifstream in("rng_state");
-		if (in.is_open()) {
-			in >> rng;
-			in.close();
-		}
+
+	if (connections < 2) {
+		std::cerr << "Error: number of connections is lower than two" << std::endl;
+		return 1;
 	}
-	boost::uniform_int<> dist(2,Nconfig-1);
-	size_t connections;
-	do {
-		connections = dist(rng);
-		std::cout << "connections: " << connections << std::endl;
-	} while(!has_regular_graph(Nconfig, connections));
+
+	if (connections > Nconfig) {
+		std::cerr << "Error: number of connections is greater than number of configurations" << std::endl;
+		return 1;
+	}
+
+	if (!has_regular_graph(Nconfig, connections)) {
+		std::cerr << "Error: Number of connections per micrstate and number of configurations don't fit." << std::endl;
+		return 1;
+	}
+
+	// output file
+	std::ofstream out;
+	{
+		char buf[1024];
+		snprintf(buf, 1024, "dos_%s_%luS_%luR_%luM_%luC_%fT%s%s.out",
+				sampler_string[sampler].c_str(),
+				steps,
+				runs,
+				macro_states,
+				connections,
+				T,
+				(tag.size() > 0 ? "_" : ""),
+				tag.c_str()
+				);
+		out.open(buf);
+	}
+	out << "# dos_exact: " << dos_exact << std::endl;
+	out << "# dos_exact_norm: " << dos_exact_norm << std::endl;
+	out << "# config_to_energy: " << config_to_energy << std::endl;
+
+	// construct microstate graph
 	matrix_int_t mt(Nconfig, connections);
 	if (connections + 1 == Nconfig) {
 		// short circuit around gengraph in case number of connections is Nconfig-1
@@ -327,17 +407,18 @@ int main(int argc, const char *argv[])
 	} else {
 		char buf[1024];
 		int graph_seed = rng();
-		snprintf(buf, 1024, "echo %lu %lu | /Users/rhab/p/dos/gengraph/bin/graph -s %i", connections, Nconfig, graph_seed);
-		std::cout << buf << std::endl;
+		snprintf(buf, 1024, "echo %lu %lu | ./graph -s %i", connections, Nconfig, graph_seed);
+		out << "# " << buf << std::endl;
 		FILE* fd = popen(buf, "r");
 		//FILE* fd = popen("ps aux", "r");
 		if (!fd) {
 			perror("Problem with pipe");
+			return 1;
 		}
 		int row = 0;
 		int col = 0;
 		while (fgets(buf, 1024, fd)) {
-			std::cout << buf;
+			out << "# " << buf;
 			std::istringstream in(buf);
 			in >> row;
 			for (size_t i = 0; i < connections; i++) {
@@ -385,22 +466,18 @@ int main(int argc, const char *argv[])
 	}
 	error_acc /= runs;
 	error_acc2 /= runs;
-	{
-		std::ofstream out("dos_q_error.dat");
-		for (size_t i = 0; i < error_acc.size(); i++) {
-			out << std::setw(15) << std::right << (i * error_check_f)
-				<< std::setw(15) << std::right << error_acc[i]
-				<< std::setw(15) << std::right
-				<< ((error_acc2[i] - error_acc[i] * error_acc[i]) / sqrt(runs))
-				<< std::setw(15) << std::right << error_s_acc[i]
-				<< std::setw(15) << std::right
-				<< ((error_s_acc2[i] - error_s_acc[i] * error_s_acc[i]) / sqrt(runs))
-				<< "\n";
-		}
+	for (size_t i = 0; i < error_acc.size(); i++) {
+		out << std::setw(15) << std::right << (i * error_check_f)
+			<< std::setw(15) << std::right << error_acc[i]
+			<< std::setw(15) << std::right
+			<< ((error_acc2[i] - error_acc[i] * error_acc[i]) / sqrt(runs))
+			<< std::setw(15) << std::right << error_s_acc[i]
+			<< std::setw(15) << std::right
+			<< ((error_s_acc2[i] - error_s_acc[i] * error_s_acc[i]) / sqrt(runs))
+			<< "\n";
 	}
-	{
-		std::ofstream out("rng_state");
-		out << rng;
-	}
+
+	out.close();
+
 	return 0;
 }
