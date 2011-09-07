@@ -267,8 +267,59 @@ public:
 	}
 };
 
-//#define SAMPLER WangLandauSampler
-#define SAMPLER BoltzmannSampler
+template<typename Sampler>
+void mc_loop(boost::mt19937 &rng,
+		const size_t &macro_states,
+		const size_t &steps,
+		const size_t &runs,
+		const size_t &connections,
+		const double &T,
+		const double &kB,
+		const size_t &error_check_f,
+		vector_double_t &error_acc,
+		vector_double_t &error_acc2,
+		vector_double_t &error_s_acc,
+		vector_double_t &error_s_acc2,
+		vector_int_t &config_to_energy,
+		matrix_int_t &mt,
+		vector_double_t &dos_exact_norm
+		) {
+	boost::uniform_int<> select_pos(0,connections-1);
+	boost::uniform_01<> dist01;
+	for (size_t run = 0; run < runs; run++) {
+		// start at random position
+		size_t state = select_pos(rng);
+		matrix_int_t Q(boost::numeric::ublas::zero_matrix<int64_t>(macro_states, macro_states));
+		//std::cout << "Q: " << Q << std::endl;
+		Sampler sampler(rng, macro_states, kB, T);
+		for (size_t step = 0; step < steps; step++) {
+			size_t new_state = mt(state, select_pos(rng));
+			int Eold = config_to_energy[state];
+			int Enew = config_to_energy[new_state];
+			Q(Eold, Enew)++;
+			assert(new_state != state);
+			if (sampler(Eold, Enew)) {
+				state = new_state;
+			}
+			if (step % error_check_f == 0) {
+				double err = calculate_error_q(dos_exact_norm, Q);
+				error_acc[step / error_check_f]  += err;
+				error_acc2[step / error_check_f] += err*err;
+				if (sampler.has_own_statistics()) {
+					err = sampler.calculate_error(dos_exact_norm);
+					error_s_acc[step / error_check_f]  += err;
+					error_s_acc2[step / error_check_f] += err*err;
+				}
+			}
+			sampler.check(step, run);
+		}
+		//std::cout << Q << std::endl;
+		matrix_double_t Qd(normalize_q(Q));
+		//std::cout << Qd << std::endl;
+		vector_double_t dos = calculate_dos_gth(Qd);
+		//std::cout << run << " " << dos << " " << calculate_error(dos_exact_norm, dos) << " " << sampler.calculate_error(dos_exact_norm) << std::endl;
+	}
+}
 
 int main(int argc, const char *argv[])
 {
@@ -428,41 +479,20 @@ int main(int argc, const char *argv[])
 		}
 		pclose(fd);
 	}
-	// MC loop
-	boost::uniform_int<> select_pos(0,connections-1);
-	boost::uniform_01<> dist01;
-	for (size_t run = 0; run < runs; run++) {
-		// start at random position
-		size_t state = select_pos(rng);
-		matrix_int_t Q(boost::numeric::ublas::zero_matrix<int64_t>(macro_states, macro_states));
-		//std::cout << "Q: " << Q << std::endl;
-		SAMPLER sampler(rng, macro_states, kB, T);
-		for (size_t step = 0; step < steps; step++) {
-			size_t new_state = mt(state, select_pos(rng));
-			int Eold = config_to_energy[state];
-			int Enew = config_to_energy[new_state];
-			Q(Eold, Enew)++;
-			assert(new_state != state);
-			if (sampler(Eold, Enew)) {
-				state = new_state;
-			}
-			if (step % error_check_f == 0) {
-				double err = calculate_error_q(dos_exact_norm, Q);
-				error_acc[step / error_check_f]  += err;
-				error_acc2[step / error_check_f] += err*err;
-				if (sampler.has_own_statistics()) {
-					err = sampler.calculate_error(dos_exact_norm);
-					error_s_acc[step / error_check_f]  += err;
-					error_s_acc2[step / error_check_f] += err*err;
-				}
-			}
-			sampler.check(step, run);
-		}
-		//std::cout << Q << std::endl;
-		matrix_double_t Qd(normalize_q(Q));
-		//std::cout << Qd << std::endl;
-		vector_double_t dos = calculate_dos_gth(Qd);
-		std::cout << run << " " << dos << " " << calculate_error(dos_exact_norm, dos) << " " << sampler.calculate_error(dos_exact_norm) << std::endl;
+
+	switch (sampler) {
+	case 0:
+		mc_loop<BoltzmannSampler>(rng, macro_states, steps, runs, connections, T, kB,
+			error_check_f, error_acc, error_acc2, error_s_acc, error_s_acc2,
+			config_to_energy, mt, dos_exact_norm);
+		break;
+	case 1:
+		mc_loop<WangLandauSampler>(rng, macro_states, steps, runs, connections, T, kB,
+			error_check_f, error_acc, error_acc2, error_s_acc, error_s_acc2,
+			config_to_energy, mt, dos_exact_norm);
+		break;
+	default:
+		std::cerr << "Error: unknown sampler" << std::endl;
 	}
 	error_acc /= runs;
 	error_acc2 /= runs;
