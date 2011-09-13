@@ -366,7 +366,7 @@ int main(int argc, const char *argv[])
 
 		size_t seed;
 		if (vm.count("seed")) {
-			seed = vm["help"].as<size_t>();
+			seed = vm["seed"].as<size_t>();
 		} else {
 			FILE* devran = fopen("/dev/urandom", "rb");
 			fread(&seed, sizeof(size_t), 1, devran);
