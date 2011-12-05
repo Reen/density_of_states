@@ -15,6 +15,14 @@ configure_file(
 set(SOURCES main.cpp)
 list(APPEND SOURCES "${CMAKE_CURRENT_BINARY_DIR}/GitSHA1.cpp" "${CMAKE_SOURCE_DIR}/include/GitSHA1.h")
 
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+	SET(HAVE_LINUX 1)
+ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	SET(HAVE_DARWIN 1)
+ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+
 configure_file (
 	"${PROJECT_SOURCE_DIR}/config.h.in"
 	"${PROJECT_BINARY_DIR}/config.h"

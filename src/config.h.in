@@ -1,3 +1,5 @@
 #define VERSION_MAJOR @dostoy_VERSION_MAJOR@
 #define VERSION_MINOR @dostoy_VERSION_MINOR@
+#cmakedefine HAVE_DARWIN
+#cmakedefine HAVE_LINUX
 
