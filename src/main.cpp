@@ -15,6 +15,9 @@
 #include <boost/numeric/ublas/io.hpp>
 #include <boost/program_options.hpp>
 #include <boost/cstdint.hpp>
+
+#include <libgen.h>
+
 #include "config.h"
 #include "GitSHA1.h"
 
@@ -456,9 +459,35 @@ int main(int argc, const char *argv[])
 			}
 		}
 	} else {
+		// determin path to the "graph" executable
+		// to add more OS see:
+		// http://stackoverflow.com/questions/1023306/finding-current-executables-path-without-proc-self-exe
+		// http://stackoverflow.com/questions/799679/programatically-retrieving-the-absolute-path-of-an-os-x-command-line-app
+		char dir[1024] = ".";
+#ifdef HAVE_LINUX
+		ssize_t len = readlink("/proc/self/exe", dir, sizeof(dir)-1);
+		if (len != -1) {
+			dir[len] = '\0';
+			dirname(dir); // dirname modifies argument
+		} else {
+			strcpy(dir, ".");
+			std::cout << "An error occured while determining the executable path" << std::endl;
+		}
+#endif
+#ifdef HAVE_DARWIN
+		uint32_t size = sizeof(dir);
+		if (_NSGetExecutablePath(dir, &size) == 0) {
+			dirname(dir); // dirname modifies argument
+		} else {
+			strcpy(dir, ".");
+			std::cout << "An error occured while determining the executable path" << std::endl;
+		}
+#endif
+		std::cout << dir << std::endl;
 		char buf[1024];
 		int graph_seed = rng();
-		snprintf(buf, 1024, "echo %lu %lu | ./graph -s %i", connections, Nconfig, graph_seed);
+		snprintf(buf, 1024, "echo %lu %lu | %s/graph -s %i",
+				connections, Nconfig, dir, graph_seed);
 		out << "# " << buf << std::endl;
 		FILE* fd = popen(buf, "r");
 		//FILE* fd = popen("ps aux", "r");
