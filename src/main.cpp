@@ -377,7 +377,10 @@ int main(int argc, const char *argv[])
 			seed = vm["seed"].as<size_t>();
 		} else {
 			FILE* devran = fopen("/dev/urandom", "rb");
-			fread(&seed, sizeof(size_t), 1, devran);
+			size_t read = fread(&seed, sizeof(size_t), 1, devran);
+			if (read != 1) {
+				std::cerr << "An error occured while reading random seed" << std::endl;
+			}
 			fclose(devran);
 		}
 		std::cout << "random seed: " << seed << std::endl;
