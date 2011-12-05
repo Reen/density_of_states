@@ -21,6 +21,11 @@
 #include "config.h"
 #include "GitSHA1.h"
 
+#ifdef HAVE_DARWIN
+#include <mach-o/dyld.h>
+#endif
+
+
 #define VERBOSE 0
 
 namespace po = boost::program_options;
@@ -464,6 +469,7 @@ int main(int argc, const char *argv[])
 		// http://stackoverflow.com/questions/1023306/finding-current-executables-path-without-proc-self-exe
 		// http://stackoverflow.com/questions/799679/programatically-retrieving-the-absolute-path-of-an-os-x-command-line-app
 		char dir[1024] = ".";
+		char buf[1024];
 #ifdef HAVE_LINUX
 		ssize_t len = readlink("/proc/self/exe", dir, sizeof(dir)-1);
 		if (len != -1) {
@@ -475,16 +481,18 @@ int main(int argc, const char *argv[])
 		}
 #endif
 #ifdef HAVE_DARWIN
-		uint32_t size = sizeof(dir);
-		if (_NSGetExecutablePath(dir, &size) == 0) {
-			dirname(dir); // dirname modifies argument
+		uint32_t size = sizeof(buf);
+		if (_NSGetExecutablePath(buf, &size) == 0) {
+			realpath(buf, dir);
+			// dirname does not modify argument on OSX but instead returns a pointer
+			// to internal memory. See man 3 dirname
+			strcpy(dir, dirname(dir));
 		} else {
 			strcpy(dir, ".");
 			std::cout << "An error occured while determining the executable path" << std::endl;
 		}
 #endif
 		std::cout << dir << std::endl;
-		char buf[1024];
 		int graph_seed = rng();
 		snprintf(buf, 1024, "echo %lu %lu | %s/graph -s %i",
 				connections, Nconfig, dir, graph_seed);
