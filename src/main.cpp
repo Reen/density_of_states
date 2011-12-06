@@ -496,7 +496,8 @@ int main(int argc, const char *argv[])
 		}
 #endif
 		std::cout << dir << std::endl;
-		int graph_seed = rng();
+		boost::uniform_int<> graph_seed_dist(0, INT_MAX);
+		int graph_seed = graph_seed_dist(rng);
 		snprintf(buf, 1024, "echo %lu %lu | %s/graph -s %i",
 				connections, Nconfig, dir, graph_seed);
 		out << "# " << buf << std::endl;
