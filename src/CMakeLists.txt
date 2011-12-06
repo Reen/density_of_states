@@ -4,7 +4,7 @@ project( dostoy )
 set (dostoy_VERSION_MAJOR 1 )
 set (dostoy_VERSION_MINOR 0 )
 
-list(APPEND CMAKE_MODULE_PATH "/Users/rhab/usr/share/cmake/rpavlik/")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake-modules/")
 include(GetGitRevisionDescription)
 get_git_head_revision(GIT_REFSPEC GIT_SHA1)
 
