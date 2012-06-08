@@ -511,7 +511,6 @@ int main(int argc, const char *argv[])
 				connections, Nconfig, dir, graph_seed);
 		out << "# " << buf << std::endl;
 		FILE* fd = popen(buf, "r");
-		//FILE* fd = popen("ps aux", "r");
 		if (!fd) {
 			perror("Problem with pipe");
 			return 1;
