@@ -4,6 +4,7 @@
 #include <iostream>
 #include <iomanip>
 #include <vector>
+#include <boost/format.hpp>
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_int.hpp>
 #include <boost/random/uniform_01.hpp>
@@ -15,6 +16,7 @@
 #include <boost/numeric/ublas/io.hpp>
 #include <boost/program_options.hpp>
 #include <boost/cstdint.hpp>
+#include <boost/tuple/tuple.hpp>
 
 #include <libgen.h>
 
@@ -34,6 +36,8 @@ typedef boost::numeric::ublas::vector<int> vector_int_t;
 typedef boost::numeric::ublas::vector<double> vector_double_t;
 typedef boost::numeric::ublas::matrix<int64_t> matrix_int_t;
 typedef boost::numeric::ublas::matrix<double> matrix_double_t;
+
+typedef std::vector< boost::tuple<size_t, double, double, double, double> > error_acc_t;
 
 int get_gcd(const vector_int_t &a) {
 	int curgcd = a[0];
@@ -202,7 +206,7 @@ private:
 	double kB;
 	double T;
 public:
-	BoltzmannSampler(boost::mt19937 &rng, size_t ms, double _kB, double _T)
+	BoltzmannSampler(boost::mt19937 &rng, size_t ms, double _kB, double _T, double)
 		: MCSampler(rng, ms), kB(_kB), T(_T) {
 	}
 
@@ -221,9 +225,10 @@ private:
 	vector_int_t H;
 	vector_double_t g;
 	double ln_f;
+	double flatness;
 public:
-	WangLandauSampler(boost::mt19937 &rng, size_t ms, double, double)
-		: MCSampler(rng, ms), H(ms), g(ms), ln_f(1.0) {
+	WangLandauSampler(boost::mt19937 &rng, size_t ms, double, double, double f)
+		: MCSampler(rng, ms), H(ms), g(ms), ln_f(1.0), flatness(f) {
 		H *= 0;
 		g *= 0;
 		for (size_t i = 0; i < ms; i++) {
@@ -281,13 +286,11 @@ void mc_loop(boost::mt19937 &rng,
 		const size_t &steps,
 		const size_t &runs,
 		const size_t &connections,
-		const double &T,
 		const double &kB,
-		const size_t &error_check_f,
-		vector_double_t &error_acc,
-		vector_double_t &error_acc2,
-		vector_double_t &error_s_acc,
-		vector_double_t &error_s_acc2,
+		const double &T,
+		const double &flatness,
+		size_t error_check_f,
+		error_acc_t &error_acc,
 		vector_int_t &config_to_energy,
 		matrix_int_t &mt,
 		vector_double_t &dos_exact_norm
@@ -295,11 +298,13 @@ void mc_loop(boost::mt19937 &rng,
 	boost::uniform_int<> select_pos(0,connections-1);
 	boost::uniform_01<> dist01;
 	for (size_t run = 0; run < runs; run++) {
+		error_check_f = 100;
 		// start at random position
 		size_t state = select_pos(rng);
 		matrix_int_t Q(boost::numeric::ublas::zero_matrix<int64_t>(macro_states, macro_states));
 		//std::cout << "Q: " << Q << std::endl;
-		Sampler sampler(rng, macro_states, kB, T);
+		Sampler sampler(rng, macro_states, kB, T, flatness);
+		size_t index = 0;
 		for (size_t step = 0; step < steps; step++) {
 			size_t new_state = mt(state, select_pos(rng));
 			int Eold = config_to_energy[state];
@@ -309,14 +314,19 @@ void mc_loop(boost::mt19937 &rng,
 			if (sampler(Eold, Enew)) {
 				state = new_state;
 			}
-			if (step % error_check_f == 0) {
+			if (step > 0 && step % error_check_f == 0) {
+				error_acc[index].get<0>() = step;
 				double err = calculate_error_q(dos_exact_norm, Q);
-				error_acc[step / error_check_f]  += err;
-				error_acc2[step / error_check_f] += err*err;
+				error_acc[index].get<1>() += err;
+				error_acc[index].get<2>() += err*err;
 				if (sampler.has_own_statistics()) {
 					err = sampler.calculate_error(dos_exact_norm);
-					error_s_acc[step / error_check_f]  += err;
-					error_s_acc2[step / error_check_f] += err*err;
+					error_acc[index].get<3>() += err;
+					error_acc[index].get<4>() += err*err;
+				}
+				index++;
+				if (step % (10*error_check_f) == 0) {
+					error_check_f *= 10;
 				}
 			}
 			sampler.check(step, run);
@@ -339,8 +349,9 @@ int main(int argc, const char *argv[])
 	double T = 2.0;
 	std::string tag;
 	const double kB = 1.0;
-	const size_t error_check_f = 1000;
+	const size_t error_check_f = 100;
 	size_t sampler = 0;
+	double flatness = 0.99;
 	boost::mt19937 rng;
 	std::vector<std::string> sampler_string;
 	sampler_string.push_back("BM");
@@ -358,7 +369,8 @@ int main(int argc, const char *argv[])
 			("temperature,T", po::value<double>(&T)->default_value(2.0),          "Temperature")
 			("tag",           po::value<std::string>(&tag),                       "Additional tag to append to files")
 			("seed",          po::value<size_t>(),                                "Random seed")
-			("sampler",       po::value<size_t>(&sampler)->default_value(1),      "Sampler to use: 0 - Boltzmann, 1 - WangLandau")
+			("sampler",       po::value<size_t>(&sampler)->default_value(1),      "Sampler to use: 0 – Boltzmann, 1 – Wang-Landau")
+			("flatness,f",    po::value<double>(&flatness)->default_value(0.99),  "Flatness parameter of the Wang-Landau algorithm")
 			;
 		po::variables_map vm;
 		po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -399,16 +411,8 @@ int main(int argc, const char *argv[])
 	}
 
 	// mean & variance accumulators
-	vector_double_t error_acc(steps / error_check_f);
-	vector_double_t error_acc2(steps / error_check_f);
-	vector_double_t error_s_acc(steps / error_check_f);
-	vector_double_t error_s_acc2(steps / error_check_f);
-
-	// set to zero
-	error_acc *= 0;
-	error_acc2 *= 0;
-	error_s_acc *= 0;
-	error_s_acc2 *= 0;
+	const size_t error_acc_size = 9 * (size_t)log10(steps / error_check_f);
+	error_acc_t error_acc   (error_acc_size);
 
 	// calculate an exact density of states
 	vector_int_t dos_exact = get_exact_dos(macro_states);
@@ -434,18 +438,23 @@ int main(int argc, const char *argv[])
 	// output file
 	std::ofstream out;
 	{
-		char buf[1024];
-		snprintf(buf, 1024, "dos_%s_%luS_%luR_%luM_%luC_%fT%s%s.out",
-				sampler_string[sampler].c_str(),
-				steps,
-				runs,
-				macro_states,
-				connections,
-				T,
-				(tag.size() > 0 ? "_" : ""),
-				tag.c_str()
-				);
-		out.open(buf);
+		std::string format;
+		format = "dos_%1%_%2%S_%3%R_%4%M_%5%C_%6$0.2fT%8%%9%.out";
+		if (sampler == 1) {
+			format = "dos_%1%_%2%S_%3%R_%4%M_%5%C_%7$0.2ff%8%%9%.out";
+		}
+		std::string buf = str( boost::format(format)
+				% sampler_string[sampler]
+				% steps
+				% runs
+				% macro_states
+				% connections
+				% T
+				% flatness
+				% (tag.size() > 0 ? "_" : "")
+				% tag
+			);
+		out.open( buf.c_str() );
 	}
 	out << "# dos_exact: " << dos_exact << std::endl;
 	out << "# dos_exact_norm: " << dos_exact_norm << std::endl;
@@ -523,28 +532,34 @@ int main(int argc, const char *argv[])
 
 	switch (sampler) {
 	case 0:
-		mc_loop<BoltzmannSampler>(rng, macro_states, steps, runs, connections, T, kB,
-			error_check_f, error_acc, error_acc2, error_s_acc, error_s_acc2,
-			config_to_energy, mt, dos_exact_norm);
+		mc_loop<BoltzmannSampler>(
+			rng, macro_states, steps, runs, connections, kB, T, flatness,
+			error_check_f, error_acc, config_to_energy, mt, dos_exact_norm
+			);
 		break;
 	case 1:
-		mc_loop<WangLandauSampler>(rng, macro_states, steps, runs, connections, T, kB,
-			error_check_f, error_acc, error_acc2, error_s_acc, error_s_acc2,
-			config_to_energy, mt, dos_exact_norm);
+		mc_loop<WangLandauSampler>(
+			rng, macro_states, steps, runs, connections, kB, T, flatness,
+			error_check_f, error_acc, config_to_energy, mt, dos_exact_norm
+			);
 		break;
 	default:
 		std::cerr << "Error: unknown sampler" << std::endl;
 	}
-	error_acc /= runs;
-	error_acc2 /= runs;
+	out << "#\n#          time     mean_error      var_error   mean_error_s    var_error_s\n";
 	for (size_t i = 0; i < error_acc.size(); i++) {
-		out << std::setw(15) << std::right << (i * error_check_f)
-			<< std::setw(15) << std::right << error_acc[i]
+		size_t time     = error_acc[i].get<0>();
+		double mean     = error_acc[i].get<1>() / runs;
+		double var_acc  = error_acc[i].get<2>() / runs;
+		double mean2    = error_acc[i].get<3>() / runs;
+		double var2_acc = error_acc[i].get<4>() / runs;
+		out << std::setw(15) << std::right << time
+			<< std::setw(15) << std::right << mean
 			<< std::setw(15) << std::right
-			<< ((error_acc2[i] - error_acc[i] * error_acc[i]) / sqrt(runs))
-			<< std::setw(15) << std::right << error_s_acc[i]
+			<< ((var_acc - mean * mean) / sqrt(runs))
+			<< std::setw(15) << std::right << mean2
 			<< std::setw(15) << std::right
-			<< ((error_s_acc2[i] - error_s_acc[i] * error_s_acc[i]) / sqrt(runs))
+			<< ((var2_acc - mean2 * mean2) / sqrt(runs))
 			<< "\n";
 	}
 
