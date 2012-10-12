@@ -206,7 +206,7 @@ private:
 	double kB;
 	double T;
 public:
-	BoltzmannSampler(boost::mt19937 &rng, size_t ms, double _kB, double _T, double)
+	BoltzmannSampler(boost::mt19937 &rng, size_t ms, double _kB, double _T, double, const matrix_int_t&)
 		: MCSampler(rng, ms), kB(_kB), T(_T) {
 	}
 
@@ -227,7 +227,7 @@ private:
 	double ln_f;
 	double flatness;
 public:
-	WangLandauSampler(boost::mt19937 &rng, size_t ms, double, double, double f)
+	WangLandauSampler(boost::mt19937 &rng, size_t ms, double, double, double f, const matrix_int_t&)
 		: MCSampler(rng, ms), H(ms), g(ms), ln_f(1.0), flatness(f) {
 		H *= 0;
 		g *= 0;
@@ -280,6 +280,48 @@ public:
 	}
 };
 
+class QMatrixSampler : public MCSampler {
+private:
+	const matrix_int_t& Q;
+public:
+	QMatrixSampler(boost::mt19937 &rng, size_t ms, double, double, double, const matrix_int_t& qmat)
+		: MCSampler(rng, ms), Q(qmat) {
+	}
+
+	bool operator()(const int &E_old, const int &E_new) {
+		size_t Hold_sum(0), Hnew_sum(0), Hold_cnt(0), Hnew_cnt(0);
+		for (size_t i = 0; i < Q.size1(); i++) {
+			if (Q(E_old,i) != 0) {
+				Hold_sum += Q(E_old,i);
+				Hold_cnt += 1;
+			}
+			if (Q(E_new,i) != 0) {
+				Hnew_sum += Q(E_new,i);
+				Hnew_cnt += 1;
+			}
+		}
+		double Hold = 0;
+		double Hnew = 0;
+		if (Hold_cnt != 0) {
+			Hold = Hold_sum / (double)(Hold_cnt);
+		}
+		if (Hnew_cnt != 0) {
+			Hnew = Hnew_sum / (double)(Hnew_cnt);
+		}
+		bool res = ((Hold >= Hnew) || (dist01(rng) <= exp(Hold-Hnew)));
+#if VERBOSE == 1
+		//std::cout << E_old << " " << E_new << " " << Hold << " " << Hnew << " " << res << std::endl;
+#endif
+		return res;
+	}
+
+	void check(const size_t &step, const size_t &run) {}
+
+	bool has_own_statistics() {
+		return false;
+	}
+};
+
 template<typename Sampler>
 void mc_loop(boost::mt19937 &rng,
 		const size_t &macro_states,
@@ -303,7 +345,7 @@ void mc_loop(boost::mt19937 &rng,
 		size_t state = select_pos(rng);
 		matrix_int_t Q(boost::numeric::ublas::zero_matrix<int64_t>(macro_states, macro_states));
 		//std::cout << "Q: " << Q << std::endl;
-		Sampler sampler(rng, macro_states, kB, T, flatness);
+		Sampler sampler(rng, macro_states, kB, T, flatness, Q);
 		size_t index = 0;
 		for (size_t step = 0; step < steps; step++) {
 			size_t new_state = mt(state, select_pos(rng));
@@ -356,6 +398,7 @@ int main(int argc, const char *argv[])
 	std::vector<std::string> sampler_string;
 	sampler_string.push_back("BM");
 	sampler_string.push_back("WL");
+	sampler_string.push_back("QM");
 
 	// parse argc / argv
 	try {
@@ -369,7 +412,7 @@ int main(int argc, const char *argv[])
 			("temperature,T", po::value<double>(&T)->default_value(2.0),          "Temperature")
 			("tag",           po::value<std::string>(&tag),                       "Additional tag to append to files")
 			("seed",          po::value<size_t>(),                                "Random seed")
-			("sampler",       po::value<size_t>(&sampler)->default_value(1),      "Sampler to use: 0 – Boltzmann, 1 – Wang-Landau")
+			("sampler",       po::value<size_t>(&sampler)->default_value(1),      "Sampler to use: 0 – Boltzmann, 1 – Wang-Landau, 2 – Q-Matrix")
 			("flatness,f",    po::value<double>(&flatness)->default_value(0.99),  "Flatness parameter of the Wang-Landau algorithm")
 			;
 		po::variables_map vm;
@@ -439,9 +482,14 @@ int main(int argc, const char *argv[])
 	std::ofstream out;
 	{
 		std::string format;
-		format = "dos_%1%_%2%S_%3%R_%4%M_%5%C_%6$0.2fT%8%%9%.out";
-		if (sampler == 1) {
+		switch(sampler) {
+		case 1:
 			format = "dos_%1%_%2%S_%3%R_%4%M_%5%C_%7$0.2ff%8%%9%.out";
+			break;
+		case 2:
+		case 0:
+		default:
+			format = "dos_%1%_%2%S_%3%R_%4%M_%5%C_%6$0.2fT%8%%9%.out";
 		}
 		std::string buf = str( boost::format(format)
 				% sampler_string[sampler]
@@ -538,6 +586,12 @@ int main(int argc, const char *argv[])
 		break;
 	case 1:
 		mc_loop<WangLandauSampler>(
+			rng, macro_states, steps, runs, connections, kB, T, flatness,
+			error_check_f, error_acc, config_to_energy, mt, dos_exact_norm
+			);
+		break;
+	case 2:
+		mc_loop<QMatrixSampler>(
 			rng, macro_states, steps, runs, connections, kB, T, flatness,
 			error_check_f, error_acc, config_to_energy, mt, dos_exact_norm
 			);
