@@ -347,7 +347,7 @@ void mc_loop(boost::mt19937 &rng,
 		//std::cout << "Q: " << Q << std::endl;
 		Sampler sampler(rng, macro_states, kB, T, flatness, Q);
 		size_t index = 0;
-		for (size_t step = 0; step < steps; step++) {
+		for (size_t step = 1; step <= steps; step++) {
 			size_t new_state = mt(state, select_pos(rng));
 			int Eold = config_to_energy[state];
 			int Enew = config_to_energy[new_state];
@@ -454,7 +454,7 @@ int main(int argc, const char *argv[])
 	}
 
 	// mean & variance accumulators
-	const size_t error_acc_size = 9 * (size_t)log10(steps / error_check_f);
+	const size_t error_acc_size = 9 * (size_t)log10(steps / error_check_f) + 1;
 	error_acc_t error_acc   (error_acc_size);
 
 	// calculate an exact density of states
@@ -598,6 +598,7 @@ int main(int argc, const char *argv[])
 		break;
 	default:
 		std::cerr << "Error: unknown sampler" << std::endl;
+		return EXIT_FAILURE;
 	}
 	out << "#\n#          time     mean_error      var_error   mean_error_s    var_error_s\n";
 	for (size_t i = 0; i < error_acc.size(); i++) {
