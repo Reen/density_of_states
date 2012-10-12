@@ -30,6 +30,7 @@
 
 #define VERBOSE 0
 
+/*
 namespace po = boost::program_options;
 namespace ublas = boost::numeric::ublas;
 typedef boost::numeric::ublas::vector<int> vector_int_t;
@@ -79,13 +80,14 @@ vector_int_t get_energy_map(const vector_int_t &dos_exact, const size_t &Nconfig
 	}
 	return energy_map;
 }
-
+*/
 /**
  * Determins if a regular graph can be constructed with the given parameters.
  *
  * @param size_t n number of nodes on the graph
  * @param size_t r number of edges per node
  */
+/*
 bool has_regular_graph(size_t n, size_t r) {
 	// 3 nodes is minimum for a regular graph
 	if (n < 3 || n <= r) return false;
@@ -240,14 +242,14 @@ public:
 	bool operator()(const int &E_old, const int &E_new) {
 		using namespace std;
 		bool res = ((g[E_old] >= g[E_new]) || (dist01(rng) <= exp(g[E_old]-g[E_new])));
-		/*cout<< __LINE__
-			<< " (" << E_old << "," << E_new << ") "
-			<< " [" << setw(12) << right << g[E_old] << "," << setw(12) << right << g[E_new] << "] "
-			<< setw(12) << right << (g[E_old]-g[E_new])
-			<< (res ? " T" : " F")
-			<< setw(14) << right << ln_f
-			<< g << " " << H
-			<< std::endl;*/
+		//cout<< __LINE__
+		//	<< " (" << E_old << "," << E_new << ") "
+		//	<< " [" << setw(12) << right << g[E_old] << "," << setw(12) << right << g[E_new] << "] "
+		//	<< setw(12) << right << (g[E_old]-g[E_new])
+		//	<< (res ? " T" : " F")
+		//	<< setw(14) << right << ln_f
+		//	<< g << " " << H
+		//	<< std::endl;
 		if (res) {
 			H[E_new]++;
 			g[E_new]+=ln_f;
@@ -380,7 +382,139 @@ void mc_loop(boost::mt19937 &rng,
 		//std::cout << run << " " << dos << " " << calculate_error(dos_exact_norm, dos) << " " << sampler.calculate_error(dos_exact_norm) << std::endl;
 	}
 }
+*/
 
+class Simulation {
+	//types
+public:
+	typedef std::vector< boost::tuple<size_t, double, double, double, double> > error_acc_t;
+
+private:
+	// variables set by parse_arguments
+	size_t macro_states;
+	size_t steps;
+	size_t runs;
+	size_t connections;
+	size_t sampler;
+	double T;
+	double flatness;
+	std::string tag;
+
+	// variable set in constructor
+	size_t error_check_f;
+
+	// random number generator
+	boost::mt19937 rng;
+	size_t seed;
+	bool seed_set;
+
+	// simulation variables and structures
+	error_acc_t error_acc;
+
+	bool parse_arguments(int argc, const char *argv[])
+	{
+		namespace po = boost::program_options;
+		// parse argc / argv
+		po::options_description desc("Allowed options");
+		desc.add_options()
+			("help", "produce help message")
+			("macrostates,M", po::value<size_t>(&macro_states)->default_value(4), "Number of macrostates")
+			("steps,S",       po::value<size_t>(&steps)->default_value(1000000),  "Number of steps per simulation")
+			("runs,R",        po::value<size_t>(&runs)->default_value(1000),      "Number of simulations")
+			("connections,C", po::value<size_t>(&connections)->default_value(3),  "Number of per-microstate connections")
+			("temperature,T", po::value<double>(&T)->default_value(2.0),          "Temperature")
+			("tag",           po::value<std::string>(&tag),                       "Additional tag to append to files")
+			("seed",          po::value<size_t>(),                                "Random seed")
+			("sampler",       po::value<size_t>(&sampler)->default_value(1),      "Sampler to use: 0 – Boltzmann, 1 – Wang-Landau, 2 – Q-Matrix")
+			("flatness,f",    po::value<double>(&flatness)->default_value(0.99),  "Flatness parameter of the Wang-Landau algorithm")
+			;
+		po::variables_map vm;
+		po::store(po::parse_command_line(argc, argv, desc), vm);
+		po::notify(vm);
+
+		if (vm.count("help")) {
+			std::cout << "density of states toy "
+				<< VERSION_MAJOR << "." << VERSION_MINOR
+				<< "-" << g_GIT_SHA1 << std::endl;
+			std::cout << desc << std::endl;
+			std::exit(EXIT_FAILURE);
+		}
+
+		if (vm.count("seed")) {
+			seed = vm["seed"].as<size_t>();
+			seed_set = true;
+		}
+		//else {
+		//}
+		//std::cout << "random seed: " << seed << std::endl;
+	}
+
+	void initialize_rng()
+	{
+		if (!seed_set) {
+			FILE* devran = fopen("/dev/urandom", "rb");
+			size_t read = fread(&seed, sizeof(size_t), 1, devran);
+			if (read != 1) {
+				throw std::runtime_error("Could not read from /dev/urandom");
+			}
+			fclose(devran);
+		}
+		rng.seed(seed);
+	}
+
+public:
+	static const double kB = 1.0;
+
+	/**
+	 *
+	 */
+	Simulation () 
+		: error_check_f(100)
+	{}
+
+	int exec(int argc, const char *argv[]) {
+		try {
+			parse_arguments(argc, argv);
+			initialize_rng();
+		} catch(std::exception& e) {
+			std::cerr << "error: " << e.what() << std::endl;
+			return EXIT_FAILURE;
+		} catch(...) {
+			std::cerr << "Exception of unknown type!" << std::endl;
+			return EXIT_FAILURE;
+		}
+
+		// safety check
+		if (steps % error_check_f != 0) {
+			std::cerr << "Error: check-frequency and number of steps don't match" << std::endl;
+			return EXIT_FAILURE;
+		}
+
+		if (run()) {
+			return EXIT_SUCCESS;
+		} else {
+			return EXIT_FAILURE;
+		}
+	}
+
+	bool run()
+	{
+
+		return true;
+	}
+};
+
+int main(int argc, const char *argv[])
+{
+	Simulation s;
+	return s.exec(argc, argv);
+	//if (s.parse_arguments(argc, argv) && s.run()) {
+		//return EXIT_SUCCESS;
+	//} else {
+		//return EXIT_FAILURE;
+	//}
+}
+/*
 int main(int argc, const char *argv[])
 {
 	// Variables set by program_options
@@ -621,3 +755,5 @@ int main(int argc, const char *argv[])
 
 	return 0;
 }
+*/
+
