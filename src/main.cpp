@@ -398,7 +398,7 @@ private:
 	// exact Q matrix
 	matrix_double_t exact_q;
 
-	bool parse_arguments(int argc, const char *argv[])
+	bool parse_arguments(int argc, char *argv[])
 	{
 		namespace po = boost::program_options;
 		// parse argc / argv
@@ -726,7 +726,7 @@ public:
 #endif
 	}
 
-	int exec(int argc, const char *argv[]) {
+	int exec(int argc, char *argv[]) {
 		try {
 			parse_arguments(argc, argv);
 			initialize_rng();
@@ -825,7 +825,7 @@ public:
 	}
 };
 
-int main(int argc, const char *argv[])
+int main(int argc, char *argv[])
 {
 	Simulation s;
 	return s.exec(argc, argv);
