@@ -49,4 +49,5 @@ add_executable( dos ${SOURCES} )
 target_link_libraries( dos ${Boost_LIBRARIES} )
 
 set_property(TARGET dos PROPERTY OUTPUT_NAME_DEBUG "dos_debug")
+set_property(TARGET dos PROPERTY DEBUG_OUTPUT_NAME "dos_debug")
 set_property(TARGET dos PROPERTY RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}")
