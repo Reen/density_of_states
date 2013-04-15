@@ -12,6 +12,7 @@
 #include <boost/random/uniform_int.hpp>
 #include <boost/random/uniform_01.hpp>
 #include <boost/math/common_factor.hpp>
+#include <boost/math/special_functions/fpclassify.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/vector.hpp>
@@ -57,15 +58,30 @@ double calculate_error(const vector_double_t &exact, const vector_double_t &dos,
 		double norm = 0;
 		for (; i1 != dos.end(); i1++) {
 			norm += exp(*i1);
+#ifdef DEBUG
+			if (!boost::math::isfinite(norm) || !boost::math::isfinite(*i1)) {
+				std::cerr << __LINE__ << " "<< norm << " " << *i1 << std::endl;
+			}
+#endif
 		}
 		i1 = dos.begin();
 		for (; i1 != dos.end(); i1++, i2++) {
 			sum += fabs((exp(*i1)/norm - *i2) / (*i2));
+#ifdef DEBUG
+			if (!boost::math::isfinite(sum) || !boost::math::isfinite(*i2)) {
+				std::cerr << __LINE__ << " "<< sum << " " << norm << " " << *i1 <<  " " << *i2 << std::endl;
+			}
+#endif
 		}
 		//std::cout << std::setprecision(22) << norm << " " << sum << " " << dos << " " << norm << std::endl;
 	} else {
 		for (; i1 != dos.end(); i1++, i2++) {
 			sum += fabs((*i1 - *i2) / (*i2));
+#ifdef DEBUG
+			if (!boost::math::isfinite(sum) || !boost::math::isfinite(*i1) || !boost::math::isfinite(*i2)) {
+				std::cerr << __LINE__ << " "<< sum << " " << *i1 << " " << *i2 << std::endl;
+			}
+#endif
 		}
 	}
 	return sum;
