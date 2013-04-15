@@ -398,7 +398,7 @@ private:
 	// exact Q matrix
 	matrix_double_t exact_q;
 
-	bool parse_arguments(int argc, char *argv[])
+	void parse_arguments(int argc, char *argv[])
 	{
 		namespace po = boost::program_options;
 		// parse argc / argv
