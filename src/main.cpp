@@ -680,7 +680,7 @@ private:
 		}
 	}
 public:
-	static const double kB = 1.0;
+	static const double kB;
 
 	/**
 	 *
@@ -804,7 +804,7 @@ public:
 
 		double min, max, bin_width;
 		std::vector<size_t> hist = build_histogram(final_errors, 20, min, max, bin_width);
-		assert(final_errors.size() == std::accumulate(hist.begin(), hist.end(), 0));
+		assert(final_errors.size() == std::accumulate(hist.begin(), hist.end(), (size_t)0));
 		out << "#\n#\n# Histogram of errors:"
 			<< "\n# min = " << min
 			<< "\n# max = " << max
@@ -824,6 +824,8 @@ public:
 		return true;
 	}
 };
+
+const double Simulation::kB = 1.0;
 
 int main(int argc, char *argv[])
 {
