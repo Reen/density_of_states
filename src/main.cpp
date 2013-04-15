@@ -56,8 +56,9 @@ double calculate_error(const vector_double_t &exact, const vector_double_t &dos,
 	double sum = 0.0;
 	if (normalize) {
 		double norm = 0;
+		double max  = *(std::max_element(dos.begin(), dos.end()));
 		for (; i1 != dos.end(); i1++) {
-			norm += exp(*i1);
+			norm += exp(*i1-max);
 #ifdef DEBUG
 			if (!boost::math::isfinite(norm) || !boost::math::isfinite(*i1)) {
 				std::cerr << __LINE__ << " "<< norm << " " << *i1 << std::endl;
@@ -66,7 +67,7 @@ double calculate_error(const vector_double_t &exact, const vector_double_t &dos,
 		}
 		i1 = dos.begin();
 		for (; i1 != dos.end(); i1++, i2++) {
-			sum += fabs((exp(*i1)/norm - *i2) / (*i2));
+			sum += fabs((exp(*i1-max)/norm - *i2) / (*i2));
 #ifdef DEBUG
 			if (!boost::math::isfinite(sum) || !boost::math::isfinite(*i2)) {
 				std::cerr << __LINE__ << " "<< sum << " " << norm << " " << *i1 <<  " " << *i2 << std::endl;
