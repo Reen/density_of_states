@@ -152,8 +152,8 @@ std::vector<size_t> build_histogram(const std::vector<double> &data, size_t bins
 	for (iterator i = data.begin(); i != data.end(); ++i) {
 		size_t index = (*i-min)/bin_width;
 		if (index < 0 || index >= hist.size()) {
+			std::cerr << "Error: index of histogram out of bounds." << std::endl;
 			std::cerr << *i << " " << index << " " << min << " " << max << std::endl;
-			throw std::out_of_range("Error: index of histogram out of bounds.");
 		}
 		hist[index]++;
 	}
