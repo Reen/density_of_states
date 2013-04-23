@@ -12,8 +12,7 @@ configure_file(
 	"${CMAKE_CURRENT_SOURCE_DIR}/GitSHA1.cpp.in"
 	"${CMAKE_CURRENT_BINARY_DIR}/GitSHA1.cpp" @ONLY
 )
-set(SOURCES main.cpp)
-list(APPEND SOURCES "${CMAKE_CURRENT_BINARY_DIR}/GitSHA1.cpp" "${CMAKE_SOURCE_DIR}/include/GitSHA1.h")
+set(SOURCES_GENERAL "${CMAKE_CURRENT_BINARY_DIR}/GitSHA1.cpp" "${CMAKE_SOURCE_DIR}/include/GitSHA1.h")
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	SET(HAVE_LINUX 1)
@@ -45,9 +44,17 @@ include_directories( ${Boost_INCLUDE_DIRS} )
 
 
 # TARGET: dos #################
-add_executable( dos ${SOURCES} )
+add_executable( dos main.cpp ${SOURCES_GENERAL} )
 target_link_libraries( dos ${Boost_LIBRARIES} )
 
 set_property(TARGET dos PROPERTY OUTPUT_NAME_DEBUG "dos_debug")
 set_property(TARGET dos PROPERTY DEBUG_OUTPUT_NAME "dos_debug")
 set_property(TARGET dos PROPERTY RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}")
+
+# TARGET: ising ###############
+add_executable( ising ising.cpp ${SOURCES_GENERAL} )
+target_link_libraries( ising ${Boost_LIBRARIES} )
+
+set_property(TARGET ising PROPERTY OUTPUT_NAME_DEBUG "ising_debug")
+set_property(TARGET ising PROPERTY DEBUG_OUTPUT_NAME "ising_debug")
+set_property(TARGET ising PROPERTY RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}")
