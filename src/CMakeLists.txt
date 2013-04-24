@@ -31,7 +31,6 @@ include_directories("${PROJECT_BINARY_DIR}")
 include_directories("${CMAKE_SOURCE_DIR}/include")
 
 #Boost Library
-set( Boost_USE_STATIC_LIBS ON )
 set( Boost_USE_MULTITHREAD ON )
 
 find_package( Boost COMPONENTS program_options REQUIRED )
