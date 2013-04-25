@@ -20,40 +20,103 @@
 
 namespace po = boost::program_options;
 
+inline size_t idx_nn(const size_t &size, const size_t &i, const size_t &j) {
+	return ( i * size + j );
+}
+
+inline size_t idx_pn(const size_t &size, const size_t &i, const size_t &j) {
+	return ( ((i+size)%size) * size + j );
+}
+
+inline size_t idx_np(const size_t &size, const size_t &i, const size_t &j) {
+	return ( i * size + ((j+size)%size) );
+}
+
+inline size_t idx_pp(const size_t &size, const size_t &i, const size_t &j) {
+	return ( ((i+size)%size) * size + ((j+size)%size) );
+}
+
 class IsingSystem : public SimulationSystem {
-	typedef std::vector<bool> storage_t;
 private:
+	typedef boost::numeric::ublas::matrix<signed char> storage_t;
+
 	size_t size;
-	storage_t spins;
+	storage_t lattice;
 	size_t sampler;
 	double J;
 	boost::uniform_01<> dist01;
 
+	// size dependent constants:
+	int e_min;
+	int e_max;
+	int n_bins;
+
 	void set_size(size_t L) {
 		size = L;
-		spins.resize(L*L);
+		lattice.resize(L, L);
+		e_min = -2 * L * L;
+		e_max =  2 * L * L;
+		n_bins = e_max - e_min;
+		Q.resize(n_bins, n_bins);
 	}
 
-	void reset() {
-		// set spins to random state
-		for (size_t i = 0; i < spins.size(); ++i) {
-			spins[i] = (dist01(rng.rng) > 0.5);
+	int reset() {
+		int magnetization = 0;
+		// set lattice to random state
+		for (size_t i = 0; i < lattice.data().size(); ++i) {
+			lattice.data()[i] = (dist01(rng.rng) > 0.5 ? 1 : -1);
+			magnetization += lattice.data()[i];
 		}
+		return magnetization;
 	}
 
-	void energy() {
-		
+	int calculate_energy() {
+		int energy = 0;
+		for (size_t i = 0; i < size; ++i) {
+			for (size_t j = 0; j < size; ++j) {
+				energy += -J * (lattice(i, j) * (
+							lattice((i-1+size)%size,  j              ) +
+							lattice( i             , (j-1+size)%size )
+							));
+			}
+		}
+		return energy;
 	}
 
 	template<class Sampler>
 	void mc_loop() {
 		
 		for (size_t run = 0; run < runs; run++) {
-			reset();
+			// reset Q matrix
+			Q *= 0;
+			int magnetization = reset();
+			int energy        = calculate_energy();
+			int i, j;
 
 			Sampler sampler(rng.rng, Q, settings);
 			for (size_t step = 1; step <= steps; step++) {
-				
+				// single spin flip:
+				i = (int)(dist01(rng.rng) * size);
+				j = (int)(dist01(rng.rng) * size);
+
+				// calculate change in energy
+				int dE = 2 * J * lattice(i,j) * (
+						lattice((i+1)%size     ,  j             ) +
+						lattice((i-1+size)%size,  j             ) +
+						lattice( i             , (j+1)%size     ) +
+						lattice( i             , (j-1+size)%size)
+						);
+
+				// update Q matrix
+				Q(energy-e_min, energy-e_min+dE)++;
+
+				if (sampler(energy, energy+dE, energy, energy+dE)) {
+					lattice(i, j) *= -1;
+					energy += dE;
+				}
+				if (step % error_check_f == 0) {
+					// calculate_statistics()
+				}
 			}
 		}
 	}
@@ -85,10 +148,17 @@ public:
 		}
 
 		try {
-			runs    = boost::any_cast<size_t>(settings["runs"]);
-			steps   = boost::any_cast<size_t>(settings["steps"]);
+			runs          = boost::any_cast<size_t>(settings["runs"]);
+			steps         = boost::any_cast<size_t>(settings["steps"]);
+			error_check_f = boost::any_cast<size_t>(settings["error_check_f"]);
+			// safety check
+			if (steps % error_check_f != 0) {
+				std::cerr << "Error: check-frequency and number of steps don't match" << std::endl;
+				std::exit(EXIT_FAILURE);
+			}
 		} catch(const boost::bad_any_cast &e) {
 			std::cerr << "bla: " << e.what() << std::endl;
+			std::exit(EXIT_FAILURE);
 		}
 
 

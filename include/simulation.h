@@ -28,7 +28,6 @@ private:
 	// variables set in constructor
 	std::vector< std::string > sampler;
 	simulation_systems_t simulation_systems;
-	size_t error_check_f;
 
 	// variables set by parse_arguments
 	settings_t settings;
@@ -48,7 +47,6 @@ public:
 	static const double kB;
 
 	Simulation ()
-		: error_check_f(100)
 	{
 		using namespace boost::assign;
 		insert(simulation_systems)

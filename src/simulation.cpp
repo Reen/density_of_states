@@ -11,15 +11,42 @@ void Simulation::parse_arguments(int argc, char *argv[]) {
 	po::options_description all("Allowed options");
 	po::options_description desc("General options");
 	desc.add_options()
-		("help", "produce help message")
-		("steps,S",       po::value<size_t>()->default_value(1000000),  "Number of steps per simulation")
-		("runs,R",        po::value<size_t>()->default_value(1000),      "Number of simulations")
-		("temperature,T", po::value<double>()->default_value(2.0),          "Temperature")
-		("tag",           po::value<std::string>(),                       "Additional tag to append to files")
-		("seed",          po::value<size_t>(),                                "Random seed")
-		("system",        po::value<std::string>(&system)->default_value("Ising"), "System to run")
-		("flatness,f",    po::value<double>()->default_value(0.99),  "Flatness parameter of the Wang-Landau algorithm")
-		;
+		(
+			"help",
+			"produce help message"
+		) (
+		 "steps,S",
+		 po::value<size_t>()->default_value(1000000),
+		 "Number of steps per simulation"
+		) (
+		 "runs,R",
+		 po::value<size_t>()->default_value(1000),
+		 "Number of simulations"
+		) (
+		 "temperature,T",
+		 po::value<double>()->default_value(2.0),
+		 "Temperature"
+		) (
+		 "tag",
+		 po::value<std::string>(),
+		 "Additional tag to append to files"
+		) (
+			"seed",
+			po::value<size_t>(),
+			"Random seed"
+		) (
+			"system",
+			po::value<std::string>(&system)->default_value("Ising"),
+			"System to run"
+		) (
+			"flatness,f",
+			po::value<double>()->default_value(0.99),
+			"Flatness parameter of the Wang-Landau algorithm"
+		) (
+			"error-check-freq",
+			po::value<size_t>()->default_value(100),
+			"Frequency of error checking"
+		);
 	all.add(desc);
 	for (simulation_systems_t::iterator iter = simulation_systems.begin();
 					iter != simulation_systems.end();
@@ -51,22 +78,17 @@ void Simulation::parse_arguments(int argc, char *argv[]) {
 		}
 	}
 
-	settings["temperature"] = vm["temperature"].as<double>();
-	settings["steps"]       = vm["steps"].as<size_t>();
-	settings["runs"]        = vm["runs"].as<size_t>();
-	settings["kB"]          = kB;
-	settings["flatness"]    = vm["flatness"].as<double>();
-
-	// safety check
-	if (boost::any_cast<size_t>(settings["steps"]) % error_check_f != 0) {
-		std::cerr << "Error: check-frequency and number of steps don't match" << std::endl;
-		std::exit(EXIT_FAILURE);
-	}
+	settings["temperature"]   = vm["temperature"].as<double>();
+	settings["steps"]         = vm["steps"].as<size_t>();
+	settings["runs"]          = vm["runs"].as<size_t>();
+	settings["kB"]            = kB;
+	settings["flatness"]      = vm["flatness"].as<double>();
+	settings["error_check_f"] = vm["error-check-freq"].as<size_t>();
 
 }
 
 void Simulation::setup_variables() {
-
+	simulation_systems[system]->setup(settings);
 }
 
 bool Simulation::run() {

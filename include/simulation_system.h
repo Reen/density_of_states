@@ -14,6 +14,7 @@ protected:
 	settings_t settings;
 	size_t steps;
 	size_t runs;
+	size_t error_check_f;
 
 	// transition counting matrix
 	matrix_int_t Q;

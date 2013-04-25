@@ -36,8 +36,8 @@ private:
 public:
 	BoltzmannSampler(boost::mt19937 &rng, const matrix_int_t&, const settings_t &settings)
 		: MCSampler(rng, settings) {
-		kB = boost::any_cast<double>(settings.find("kB"));
-		T  = boost::any_cast<double>(settings.find("temperature"));
+		kB = boost::any_cast<double>(settings.find("kB")->second);
+		T  = boost::any_cast<double>(settings.find("temperature")->second);
 	}
 
 	bool operator()(const int &E_old, const int &E_new) {
