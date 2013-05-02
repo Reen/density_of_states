@@ -51,7 +51,7 @@ set_property(TARGET dos PROPERTY DEBUG_OUTPUT_NAME "dos_debug")
 set_property(TARGET dos PROPERTY RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}")
 
 # TARGET: ising ###############
-add_executable( ising ising.cpp simulation.cpp simulation_rng.cpp ${SOURCES_GENERAL} )
+add_executable( ising ising.cpp simulation.cpp simulation_rng.cpp q_matrix_tools.cpp ${SOURCES_GENERAL} )
 target_link_libraries( ising ${Boost_LIBRARIES} )
 
 set_property(TARGET ising PROPERTY OUTPUT_NAME_DEBUG "ising_debug")
