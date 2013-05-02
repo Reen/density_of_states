@@ -151,6 +151,7 @@ private:
 				if (step % error_check_f == 0) {
 					// calculate_statistics()
 					error_acc[index].step = step;
+					Qd = normalize_q(Q);
 
 					double err = calculate_error_q(dos_exact_norm, Qd);
 					error_acc[index].err1(err);
