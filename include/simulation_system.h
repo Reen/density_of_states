@@ -19,6 +19,9 @@ protected:
 	// transition counting matrix
 	matrix_int_t Q;
 
+	// normalized transition matrix
+	matrix_double_t Qd;
+
 public:
 	virtual boost::program_options::options_description get_program_options() = 0;
 	virtual bool run() = 0;

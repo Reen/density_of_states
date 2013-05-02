@@ -43,6 +43,7 @@ private:
 		e_max =  2 * L * L;
 		n_bins = e_max - e_min;
 		Q.resize(n_bins, n_bins);
+		Qd.resize(n_bins, n_bins);
 	}
 
 	int reset() {
