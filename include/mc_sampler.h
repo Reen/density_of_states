@@ -40,11 +40,13 @@ public:
 		T  = boost::any_cast<double>(settings.find("temperature")->second);
 	}
 
-	bool operator()(const int &E_old, const int &E_new) {
+	template<class T1>
+	bool operator()(const T1 &E_old, const T1 &E_new) {
 		return ((E_old >= E_new) || (dist01(rng) <= exp((E_old-E_new)/(kB * T))));
 	}
 
-	bool operator()(const double &E_old, const double &E_new, const int &i_old, const int &i_new) {
+	template<class T1, class T2>
+	bool operator()(const T1 &E_old, const T1 &E_new, const T2 &i_old, const T2 &i_new) {
 		return ((E_old >= E_new) || (dist01(rng) <= exp((E_old-E_new)/(kB * T))));
 	}
 
@@ -54,35 +56,35 @@ public:
 	}
 };
 
-#if 0
 class WangLandauSampler : public MCSampler {
 private:
 	vector_int_t H;
 	vector_double_t g;
 	double ln_f;
 	double flatness;
+	size_t macrostates;
 public:
-	WangLandauSampler(boost::mt19937 &rng, const matrix_int_t&)
-		: MCSampler(rng), H(ms), g(ms), ln_f(1.0), flatness(f) {
+	WangLandauSampler(boost::mt19937 &rng, const matrix_int_t&, const settings_t &settings)
+		: MCSampler(rng, settings), ln_f(1.0)
+	{
+		macrostates = boost::any_cast<size_t>(settings.find("macrostates")->second);
+		flatness    = boost::any_cast<double>(settings.find("flatness")->second);
+
+		H.resize(macrostates);
+		g.resize(macrostates);
+
 		H *= 0;
 		g *= 0;
-		for (size_t i = 0; i < ms; i++) {
+
+		for (size_t i = 0; i < H.size(); i++) {
 			assert(H[i] == 0);
 			assert(g[i] == 0);
 		}
 	}
 
 	bool operator()(const int &E_old, const int &E_new) {
-		using namespace std;
 		bool res = ((g[E_old] >= g[E_new]) || (dist01(rng) <= exp(g[E_old]-g[E_new])));
-		//cout<< __LINE__
-		//	<< " (" << E_old << "," << E_new << ") "
-		//	<< " [" << setw(12) << right << g[E_old] << "," << setw(12) << right << g[E_new] << "] "
-		//	<< setw(12) << right << (g[E_old]-g[E_new])
-		//	<< (res ? " T" : " F")
-		//	<< setw(14) << right << ln_f
-		//	<< g << " " << H
-		//	<< std::endl;
+
 		if (res) {
 			H[E_new]++;
 			g[E_new]+=ln_f;
@@ -93,9 +95,24 @@ public:
 		return res;
 	}
 
+	template<class T1, class T2>
+	bool operator()(const T1 &E_old, const T1 &E_new, const T2 &i_old, const T2 &i_new) {
+		bool res = ((g[i_old] >= g[i_new]) || (dist01(rng) <= exp(g[i_old]-g[i_new])));
+
+		if (res) {
+			H[i_new]++;
+			g[i_new]+=ln_f;
+		} else {
+			H[i_old]++;
+			g[i_old]+=ln_f;
+		}
+		return res;
+
+	}
+
 	void check(const size_t & step, const size_t &run) {
 		int min = *std::min_element(H.begin(), H.end());
-		if (min > 0 && (min > (0.99 * sum(H))/macro_states)) {
+		if (min > 0 && (min > (0.99 * sum(H))/macrostates)) {
 			H *= 0;
 			ln_f /= 2.0;
 #if VERBOSE == 1
@@ -116,6 +133,7 @@ public:
 	//}
 };
 
+#if 0
 class QualityMeasureBSampler : public MCSampler {
 private:
 	const matrix_int_t& Q;

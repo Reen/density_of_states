@@ -13,6 +13,10 @@
 #include <boost/accumulators/statistics/mean.hpp>
 #include <boost/accumulators/statistics/median.hpp>
 #include <boost/accumulators/statistics/variance.hpp>
+
+// Boost Assert
+#include <boost/assert.hpp>
+
 // Boost Bind
 #include <boost/bind.hpp>
 
@@ -25,8 +29,11 @@
 
 #include "simulation_system.h"
 #include "mc_sampler.h"
+#include "q_matrix_tools.h"
 
 namespace po = boost::program_options;
+
+using namespace rhab;
 
 struct StepStatistics {
 	size_t step;
@@ -79,6 +86,9 @@ private:
 	// error accumulator array
 	error_acc_t error_acc;
 
+	// exact dos
+	vector_double_t dos_exact_norm;
+
 	// size dependent constants:
 	int e_min;
 	int e_max;
@@ -121,6 +131,9 @@ private:
 	void mc_loop() {
 		
 		for (size_t run = 0; run < runs; run++) {
+			// variables for error / statistics calculation
+			size_t error_check_freq = error_check_f;
+			size_t index = 0;
 			// reset Q matrix
 			Q *= 0;
 			int magnetization = reset();
@@ -141,10 +154,17 @@ private:
 						lattice( i             , (j-1+size)%size)
 						);
 
-				// update Q matrix
-				Q(energy-e_min, energy-e_min+dE)++;
+				BOOST_ASSERT((energy-e_min)%4 == 0);
+				BOOST_ASSERT((energy-e_min+dE)%4 == 0);
+				int Ei = (energy-e_min) / 4;
+				int Ej = (energy-e_min+dE) / 4;
+				BOOST_ASSERT(Ei >= 0);
+				BOOST_ASSERT(Ej >= 0);
 
-				if (sampler(energy, energy+dE, energy, energy+dE)) {
+				// update Q matrix
+				Q(Ei, Ej)++;
+
+				if (sampler(energy, energy+dE, Ei, Ej)) {
 					lattice(i, j) *= -1;
 					energy += dE;
 				}
@@ -165,6 +185,7 @@ private:
 						error_check_f *= 10;
 					}
 				}
+				sampler.check(step, run);
 			}
 		}
 	}
@@ -177,7 +198,7 @@ public:
 		boost::program_options::options_description desc("Ising System Options");
 		desc.add_options()
 			("ising-size",        po::value<size_t>(&size)->default_value(50)->notifier(boost::bind(&IsingSystem::set_size, this, _1)), "Number of Spins in one dimension.\nGrid will be size*size")
-			("ising-sampler",     po::value<size_t>(&sampler)->default_value(1),      "Sampler to use:\n0 – Boltzmann, 1 – Wang-Landau, 2 – Q-Matrix")
+			("ising-sampler",     po::value<size_t>(&sampler)->default_value(1),      "Sampler to use:\n0 – Boltzmann, 1 – Wang-Landau, 2 – Q-Matrix B, 3 – Q-Matrix A")
 			("ising-interaction", po::value<double>(&J)->default_value(1),      "Interaction J\nJ>0 - ferromagnetic\nJ<0 - antiferromagnetic\nJ=0 - noninteracting")
 			;
 		return desc;
@@ -212,6 +233,7 @@ public:
 		size_t error_acc_size = 9 * (size_t)log10(steps / error_check_f) + 1;
 		error_acc.resize(error_acc_size);
 
+
 	}
 
 	virtual bool run() {
@@ -219,10 +241,10 @@ public:
 		case 0:
 			mc_loop<BoltzmannSampler>();
 			break;
-		/*case 1:
+		case 1:
 			mc_loop<WangLandauSampler>();
 			break;
-		case 2:
+		/*case 2:
 			mc_loop<QualityMeasureBSampler>();
 			break;
 		case 3:
