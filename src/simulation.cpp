@@ -15,21 +15,21 @@ void Simulation::parse_arguments(int argc, char *argv[]) {
 			"help",
 			"produce help message"
 		) (
-		 "steps,S",
-		 po::value<size_t>()->default_value(1000000),
-		 "Number of steps per simulation"
+			"steps,S",
+			po::value<size_t>()->default_value(1000000),
+			"Number of steps per simulation"
 		) (
-		 "runs,R",
-		 po::value<size_t>()->default_value(1000),
-		 "Number of simulations"
+			"runs,R",
+			po::value<size_t>()->default_value(1000),
+			"Number of simulations"
 		) (
-		 "temperature,T",
-		 po::value<double>()->default_value(2.0),
-		 "Temperature"
+			"temperature,T",
+			po::value<double>()->default_value(2.0),
+			"Temperature"
 		) (
-		 "tag",
-		 po::value<std::string>(),
-		 "Additional tag to append to files"
+			"tag",
+			po::value<std::string>(),
+			"Additional tag to append to files"
 		) (
 			"seed",
 			po::value<size_t>(),
