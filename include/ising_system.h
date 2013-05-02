@@ -5,6 +5,14 @@
 // C++ Standard Library
 #include <vector>
 
+// Boost Accumulator
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics/stats.hpp>
+#include <boost/accumulators/statistics/min.hpp>
+#include <boost/accumulators/statistics/max.hpp>
+#include <boost/accumulators/statistics/mean.hpp>
+#include <boost/accumulators/statistics/median.hpp>
+#include <boost/accumulators/statistics/variance.hpp>
 // Boost Bind
 #include <boost/bind.hpp>
 
@@ -20,16 +28,41 @@
 
 namespace po = boost::program_options;
 
+struct StepStatistics {
+	size_t step;
+	boost::accumulators::accumulator_set<
+		double,
+		boost::accumulators::stats<
+			boost::accumulators::tag::min,
+			boost::accumulators::tag::max,
+			boost::accumulators::tag::mean,
+			boost::accumulators::tag::variance,
+			boost::accumulators::tag::median
+				> > err1;
+	boost::accumulators::accumulator_set<
+		double,
+		boost::accumulators::stats<
+			boost::accumulators::tag::min,
+			boost::accumulators::tag::max,
+			boost::accumulators::tag::mean,
+			boost::accumulators::tag::variance,
+			boost::accumulators::tag::median
+				> > err2;
+};
 
 class IsingSystem : public SimulationSystem {
 private:
 	typedef boost::numeric::ublas::matrix<signed char> storage_t;
+	typedef std::vector< StepStatistics > error_acc_t;
 
 	size_t size;
 	storage_t lattice;
 	size_t sampler;
 	double J;
 	boost::uniform_01<> dist01;
+
+	// error accumulator array
+	error_acc_t error_acc;
 
 	// size dependent constants:
 	int e_min;
@@ -102,6 +135,19 @@ private:
 				}
 				if (step % error_check_f == 0) {
 					// calculate_statistics()
+					error_acc[index].step = step;
+
+					double err = calculate_error_q(dos_exact_norm, Qd);
+					error_acc[index].err1(err);
+					if (sampler.has_own_statistics()) {
+						err = sampler.calculate_error(dos_exact_norm);
+						error_acc[index].err2(err);
+					}
+
+					index++;
+					if (step % (10*error_check_f) == 0) {
+						error_check_f *= 10;
+					}
 				}
 			}
 		}
@@ -137,16 +183,18 @@ public:
 			runs          = boost::any_cast<size_t>(settings["runs"]);
 			steps         = boost::any_cast<size_t>(settings["steps"]);
 			error_check_f = boost::any_cast<size_t>(settings["error_check_f"]);
-			// safety check
-			if (steps % error_check_f != 0) {
-				std::cerr << "Error: check-frequency and number of steps don't match" << std::endl;
-				std::exit(EXIT_FAILURE);
-			}
 		} catch(const boost::bad_any_cast &e) {
 			std::cerr << "bla: " << e.what() << std::endl;
 			std::exit(EXIT_FAILURE);
 		}
 
+		// safety check
+		if (steps % error_check_f != 0) {
+			std::cerr << "Error: check-frequency and number of steps don't match" << std::endl;
+			std::exit(EXIT_FAILURE);
+		}
+		size_t error_acc_size = 9 * (size_t)log10(steps / error_check_f) + 1;
+		error_acc.resize(error_acc_size);
 
 	}
 
