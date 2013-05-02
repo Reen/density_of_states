@@ -55,10 +55,25 @@ private:
 	typedef boost::numeric::ublas::matrix<signed char> storage_t;
 	typedef std::vector< StepStatistics > error_acc_t;
 
+	// size L of one dimension of the lattice
 	size_t size;
+
+	// the lattice itself
 	storage_t lattice;
+
+	/**
+	 * Settings
+	 */
+	// the sampler chosen
 	size_t sampler;
+
+	// the interaction constant J
 	double J;
+
+
+	/**
+	 * Misc
+	 */
 	boost::uniform_01<> dist01;
 
 	// error accumulator array
@@ -74,7 +89,7 @@ private:
 		lattice.resize(L, L);
 		e_min = -2 * L * L;
 		e_max =  2 * L * L;
-		n_bins = e_max - e_min;
+		n_bins = e_max - e_min; // evtl durch 4 teilen
 		Q.resize(n_bins, n_bins);
 		Qd.resize(n_bins, n_bins);
 	}
