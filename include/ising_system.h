@@ -20,21 +20,6 @@
 
 namespace po = boost::program_options;
 
-inline size_t idx_nn(const size_t &size, const size_t &i, const size_t &j) {
-	return ( i * size + j );
-}
-
-inline size_t idx_pn(const size_t &size, const size_t &i, const size_t &j) {
-	return ( ((i+size)%size) * size + j );
-}
-
-inline size_t idx_np(const size_t &size, const size_t &i, const size_t &j) {
-	return ( i * size + ((j+size)%size) );
-}
-
-inline size_t idx_pp(const size_t &size, const size_t &i, const size_t &j) {
-	return ( ((i+size)%size) * size + ((j+size)%size) );
-}
 
 class IsingSystem : public SimulationSystem {
 private:
