@@ -27,6 +27,9 @@ public:
 	double calculate_error(const vector_double_t &exact) {
 		return 0.0;
 	}
+
+	template<class T2>
+	void rejected(const T2 &) {}
 };
 
 class BoltzmannSampler : public MCSampler {
@@ -107,7 +110,12 @@ public:
 			g[i_old]+=ln_f;
 		}
 		return res;
+	}
 
+	template<class T2>
+	void rejected(const T2 &i_old) {
+		H[i_old]++;
+		g[i_old]+=ln_f;
 	}
 
 	void check(const size_t & step, const size_t &run) {

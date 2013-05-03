@@ -59,6 +59,10 @@ vector_double_t rhab::calculate_dos_gth(matrix_double_t inner_mat) {
 
 
 double rhab::calculate_error(const vector_double_t &exact, const vector_double_t &dos, bool normalize) {
+	if (dos.size() == 0 || exact.size() == 0) {
+		std::cerr << "exact or calculated density of states vector has zero length!" << std::endl;
+		return -1;
+	}
 	vector_double_t::const_iterator i1 = dos.begin();
 	vector_double_t::const_iterator i2 = exact.begin();
 	double sum = 0.0;
@@ -69,7 +73,7 @@ double rhab::calculate_error(const vector_double_t &exact, const vector_double_t
 			norm += exp(*i1-max);
 #ifdef DEBUG
 			if (!boost::math::isfinite(norm) || !boost::math::isfinite(*i1)) {
-				std::cerr << __LINE__ << " "<< norm << " " << *i1 << std::endl;
+				std::cerr << __FILE__ << ":" << __LINE__ << " " << norm << " " << *i1 << std::endl;
 			}
 #endif
 		}
@@ -78,7 +82,7 @@ double rhab::calculate_error(const vector_double_t &exact, const vector_double_t
 			sum += fabs((exp(*i1-max)/norm - *i2) / (*i2));
 #ifdef DEBUG
 			if (!boost::math::isfinite(sum) || !boost::math::isfinite(*i2)) {
-				std::cerr << __LINE__ << " "<< sum << " " << norm << " " << *i1 <<  " " << *i2 << std::endl;
+				std::cerr << __FILE__ << ":" << __LINE__ << " " << sum << " " << norm << " " << *i1 <<  " " << *i2 << std::endl;
 			}
 #endif
 		}
@@ -88,7 +92,7 @@ double rhab::calculate_error(const vector_double_t &exact, const vector_double_t
 			sum += fabs((*i1 - *i2) / (*i2));
 #ifdef DEBUG
 			if (!boost::math::isfinite(sum) || !boost::math::isfinite(*i1) || !boost::math::isfinite(*i2)) {
-				std::cerr << __LINE__ << " "<< sum << " " << *i1 << " " << *i2 << std::endl;
+				std::cerr << __FILE__ << ":" << __LINE__ << " " << sum << " " << *i1 << " " << *i2 << std::endl;
 			}
 #endif
 		}
