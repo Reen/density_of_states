@@ -92,7 +92,7 @@ po::options_description IsingSystem::get_program_options() {
 }
 
 void IsingSystem::setup(settings_t s) {
-	SimulationSystem::setup(settings);
+	SimulationSystem::setup(s);
 	
 	try {
 		sampler       = boost::any_cast<size_t>(settings["sampler"]);
