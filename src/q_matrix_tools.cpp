@@ -1,4 +1,6 @@
 #include "q_matrix_tools.h"
+#include "rhab/basic_iteration.h"
+#include <boost/numeric/ublas/operation.hpp>
 #include <boost/math/special_functions/fpclassify.hpp>
 
 matrix_double_t rhab::normalize_q(const matrix_int_t & Q) {
@@ -57,6 +59,30 @@ vector_double_t rhab::calculate_dos_gth(matrix_double_t inner_mat) {
 	return dos;
 }
 
+vector_double_t rhab::calculate_dos_power(matrix_double_t mat) {
+	namespace ublas = boost::numeric::ublas;
+	vector_double_t t1(mat.size1());
+	vector_double_t t2(mat.size1());
+	vector_double_t t3(mat.size1());
+	std::fill(t1.begin(), t1.end(), 1.0/mat.size1());
+	size_t max_iter = 10000;
+	double lambda, residual, dist;
+
+	rhab::basic_iteration<vector_double_t::iterator> iter(max_iter, 1e-8);
+	do {
+		++iter;
+		noalias(t2) = ublas::prod(t1, mat);
+		//ublas::axpy_prod(t1, mat, t2, true);
+		t2 /= ublas::norm_1(t2);
+		++iter;
+		noalias(t1) = ublas::prod(t2, mat);
+		//ublas::axpy_prod(t2, mat, t1, true);
+		t1 /= ublas::norm_1(t1);
+	} while(!iter.converged(t2.begin(), t2.end(), t1.begin(), dist));
+
+	return t1;
+}
+
 
 double rhab::calculate_error(const vector_double_t &exact, const vector_double_t &dos, bool normalize) {
 	if (dos.size() == 0 || exact.size() == 0) {
@@ -101,6 +127,6 @@ double rhab::calculate_error(const vector_double_t &exact, const vector_double_t
 }
 
 double rhab::calculate_error_q(const vector_double_t &exact, const matrix_double_t &Qd) {
-	vector_double_t dos(calculate_dos_gth(Qd));
+	vector_double_t dos(calculate_dos_power(Qd));
 	return calculate_error(exact, dos);
 }
