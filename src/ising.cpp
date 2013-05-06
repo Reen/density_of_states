@@ -17,6 +17,8 @@
 #include <stdexcept>
 #include <cxxabi.h>
 
+#include "config.h"
+
 void my_terminate(void);
 
 namespace {
@@ -24,6 +26,7 @@ namespace {
 	static const bool SET_TERMINATE = std::set_terminate(my_terminate);
 }
 
+#ifdef HAVE_LINUX
 // This structure mirrors the one found in /usr/include/asm/ucontext.h
 typedef struct _sig_ucontext {
 	unsigned long     uc_flags;
@@ -120,6 +123,7 @@ void crit_err_hdlr(int sig_num, siginfo_t * info, void * ucontext) {
 
 	exit(EXIT_FAILURE);
 }
+#endif
 
 void my_terminate() {
 	static bool tried_throw = false;
@@ -157,6 +161,7 @@ void my_terminate() {
 
 int main(int argc, char *argv[])
 {
+#ifdef HAVE_LINUX
 	struct sigaction sigact;
 
 	sigact.sa_sigaction = crit_err_hdlr;
@@ -167,6 +172,8 @@ int main(int argc, char *argv[])
 			<< " (" << strsignal(SIGABRT) << ")\n";
 		exit(EXIT_FAILURE);
 	}
+#endif
+	std::cout << ::SET_TERMINATE << std::endl;
 
 	Simulation s;
 	return s.exec(argc, argv);
