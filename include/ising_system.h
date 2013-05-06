@@ -283,8 +283,6 @@ public:
 	virtual void setup(settings_t s) {
 		settings = s;
 
-		set_size(size);
-
 		if (settings.count("seed")) {
 			rng.seed = boost::any_cast<size_t>(settings["seed"]);
 			rng.seed_set = true;

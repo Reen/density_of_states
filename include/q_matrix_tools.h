@@ -11,7 +11,9 @@ namespace rhab {
 	vector_double_t calculate_dos_gth(matrix_double_t inner_mat);
 	vector_double_t calculate_dos_power(matrix_double_t inner_mat);
 	double calculate_error_q(const vector_double_t &exact, const matrix_double_t &Qd);
-	double calculate_error(const vector_double_t &exact, const vector_double_t &dos, bool normalize = false);
+	double calculate_error(const vector_double_t &exact,
+			const vector_double_t &dos,
+			bool normalize = false);
 }
 
 #endif /* end of include guard: Q_MATRIX_TOOLS_H */
