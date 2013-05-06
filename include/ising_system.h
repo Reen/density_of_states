@@ -147,7 +147,7 @@ private:
 					Q(Ei, Ej)++;
 				}
 
-				if (!out_of_bounds && sampler(energy, energy+dE, Ei, Ej)) {
+				if (!out_of_bounds && sampler(dE, Ei, Ej)) {
 					lattice(i, j) *= -1;
 					energy += dE;
 				}

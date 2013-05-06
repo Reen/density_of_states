@@ -32,25 +32,60 @@ public:
 	void rejected(const T2 &) {}
 };
 
+
+class BoltzmannFunctor {
+	const double &kB;
+	const double &T;
+
+public:
+	BoltzmannFunctor(const double &_kB, const double &_T)
+		: kB(_kB), T(_T) {}
+
+	template<class FloatType>
+	inline double operator()(const FloatType &dE) {
+		return exp(dE);
+	}
+};
+
+class BoltzmannTableFunctor {
+	const double &kB;
+	const double &T;
+	double table[9];
+
+public:
+	BoltzmannTableFunctor(const double &_kB, const double &_T)
+		: kB(_kB), T(_T) {
+		table[4] = exp(-4/(kB*T));
+		table[8] = exp(-8/(kB*T));
+	}
+
+	inline double operator()(const int &dE) {
+		BOOST_ASSERT((dE == 4) || (dE == 8));
+		return table[dE];
+	}
+};
+
+template<class expfn_t>
 class BoltzmannSampler : public MCSampler {
 private:
 	double kB;
 	double T;
+	expfn_t exp_fn;
 public:
 	BoltzmannSampler(boost::mt19937 &rng, const matrix_int_t&, const settings_t &settings)
-		: MCSampler(rng, settings) {
+		: MCSampler(rng, settings), exp_fn(kB, T) {
 		kB = boost::any_cast<double>(settings.find("kB")->second);
 		T  = boost::any_cast<double>(settings.find("temperature")->second);
 	}
 
 	template<class T1>
-	bool operator()(const T1 &E_old, const T1 &E_new) {
-		return ((E_old >= E_new) || (dist01(rng) <= exp((E_old-E_new)/(kB * T))));
+	bool operator()(const T1 &dE) {
+		return ((dE <= 0) || (dist01(rng) <= exp_fn(dE)));
 	}
 
 	template<class T1, class T2>
-	bool operator()(const T1 &E_old, const T1 &E_new, const T2 &i_old, const T2 &i_new) {
-		return ((E_old >= E_new) || (dist01(rng) <= exp((E_old-E_new)/(kB * T))));
+	bool operator()(const T1 &dE, const T2 &i_old, const T2 &i_new) {
+		return ((dE <= 0) || (dist01(rng) <= exp_fn(dE)));
 	}
 
 	void check(const size_t & step, const size_t &run) {
@@ -85,21 +120,8 @@ public:
 		}
 	}
 
-	bool operator()(const int &E_old, const int &E_new) {
-		bool res = ((g[E_old] >= g[E_new]) || (dist01(rng) <= exp(g[E_old]-g[E_new])));
-
-		if (res) {
-			H[E_new]++;
-			g[E_new]+=ln_f;
-		} else {
-			H[E_old]++;
-			g[E_old]+=ln_f;
-		}
-		return res;
-	}
-
 	template<class T1, class T2>
-	bool operator()(const T1 &E_old, const T1 &E_new, const T2 &i_old, const T2 &i_new) {
+	bool operator()(const T1 &dE, const T2 &i_old, const T2 &i_new) {
 		bool res = ((g[i_old] >= g[i_new]) || (dist01(rng) <= exp(g[i_old]-g[i_new])));
 
 		if (res) {
