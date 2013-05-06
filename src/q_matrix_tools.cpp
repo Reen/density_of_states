@@ -115,7 +115,9 @@ double rhab::calculate_error(const vector_double_t &exact, const vector_double_t
 		//std::cout << std::setprecision(22) << norm << " " << sum << " " << dos << " " << norm << std::endl;
 	} else {
 		for (; i1 != dos.end(); i1++, i2++) {
-			sum += fabs((*i1 - *i2) / (*i2));
+			if ((*i2) != 0.) {
+				sum += fabs((*i1 - *i2) / (*i2));
+			}
 #ifdef DEBUG
 			if (!boost::math::isfinite(sum) || !boost::math::isfinite(*i1) || !boost::math::isfinite(*i2)) {
 				std::cerr << __FILE__ << ":" << __LINE__ << " " << sum << " " << *i1 << " " << *i2 << std::endl;
