@@ -2,6 +2,8 @@
 
 #define SIMULATION_SYSTEM_H
 
+// C++ Standard Library
+#include <fstream>
 
 // Boost Program Options
 #include <boost/program_options.hpp>
@@ -15,6 +17,8 @@ protected:
 	size_t steps;
 	size_t runs;
 	size_t error_check_f;
+	std::ofstream out;
+	std::string tag;
 
 	// transition counting matrix
 	matrix_int_t Q;
@@ -22,10 +26,12 @@ protected:
 	// normalized transition matrix
 	matrix_double_t Qd;
 
+	virtual void setup_output() = 0;
+
 public:
 	virtual boost::program_options::options_description get_program_options() = 0;
 	virtual bool run() = 0;
-	virtual void setup(settings_t s) = 0;
+	virtual void setup(settings_t s);
 
 	SimulationRNG rng;
 

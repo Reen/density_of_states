@@ -3,8 +3,6 @@
 #define ISING_SYSTEM_H
 
 // C++ Standard Library
-#include <fstream>
-#include <iomanip>
 #include <vector>
 
 // Boost Accumulator
@@ -19,9 +17,6 @@
 // Boost Assert
 #include <boost/assert.hpp>
 
-// Boost Bind
-#include <boost/bind.hpp>
-
 // Boost Format
 #include <boost/format.hpp>
 
@@ -33,10 +28,8 @@
 
 
 #include "simulation_system.h"
-#include "mc_sampler.h"
 #include "q_matrix_tools.h"
 
-namespace po = boost::program_options;
 
 using namespace rhab;
 
@@ -99,44 +92,17 @@ private:
 	int e_max;
 	size_t n_bins;
 
-	void set_size(size_t L) {
-		size = L;
-		lattice.resize(L, L);
-		e_min = -2 * L * L;
-		//e_max =  2 * L * L;
-		e_max =  0;
-		n_bins = (e_max - e_min)/4 + 1;
-		Q.resize(n_bins, n_bins);
-		Qd.resize(n_bins, n_bins);
-	}
+	void set_size(size_t L);
 
-	int reset() {
-		int magnetization = 0;
-		// set lattice to random state
-		for (size_t i = 0; i < lattice.data().size(); ++i) {
-			lattice.data()[i] = (dist01(rng.rng) > 0.5 ? 1 : -1);
-			magnetization += lattice.data()[i];
-		}
-		return magnetization;
-	}
+	int reset();
 
-	int calculate_energy() {
-		int energy = 0;
-		for (size_t i = 0; i < size; ++i) {
-			for (size_t j = 0; j < size; ++j) {
-				energy += -J * (lattice(i, j) * (
-							lattice((i-1+size)%size,  j              ) +
-							lattice( i             , (j-1+size)%size )
-							));
-			}
-		}
-		return energy;
-	}
+	int calculate_energy();
 
 	template<class Sampler>
 	void mc_loop() {
 		
 		for (size_t run = 0; run < runs; run++) {
+			std::cout << run << std::endl;
 			// variables for error / statistics calculation
 			size_t error_check_freq = error_check_f;
 			size_t index = 0;
@@ -204,32 +170,16 @@ private:
 				}
 				sampler.check(step, run);
 			}
+			//std::cout << Q << std::endl;
+			//std::cout << Qd << std::endl;
+			//std::cout << calculate_dos_power(Qd) << std::endl;
+			//std::cout << dos_exact_norm << std::endl;
 		}
 	}
 
-	void read_exact_dos() {
-		std::string format = "%1%/data/ising/exact_%2%.dat";
-		std::string fn = str( boost::format(format)
-				% boost::any_cast<std::string>(settings["executable_path"])
-				% size
-				);
-		std::ifstream in(fn.c_str());
+	void read_exact_dos();
 
-		dos_exact_norm.resize(n_bins);
-		dos_exact_norm *= 0;
-		for (size_t i = 0; i < n_bins; i++) {
-			int energy;
-			double dos;
-			in >> energy >> dos;
-			dos_exact_norm[i] = dos;
-		}
-		//std::cout << e_min << " " << e_max << " " << n_bins << std::endl;
-		//std::cout << dos_exact_norm << std::endl;
-		//std::exit(EXIT_FAILURE);
-	}
 
-	std::ofstream out;
-	std::string tag;
 	void setup_output() {
 		std::vector<std::string> sampler_string;
 		// initialize list of available samplers
@@ -268,97 +218,13 @@ private:
 	}
 
 public:
-	IsingSystem()
-	{}
+	IsingSystem();
 
-	virtual boost::program_options::options_description get_program_options() {
-		boost::program_options::options_description desc("Ising System Options");
-		desc.add_options()
-			("ising-size",        po::value<size_t>(&size)->default_value(14)->notifier(boost::bind(&IsingSystem::set_size, this, _1)), "Number of Spins in one dimension.\nGrid will be size*size")
-			("ising-interaction", po::value<double>(&J)->default_value(1),      "Interaction J\nJ>0 - ferromagnetic\nJ<0 - antiferromagnetic\nJ=0 - noninteracting")
-			;
-		return desc;
-	}
+	virtual boost::program_options::options_description get_program_options();
 
-	virtual void setup(settings_t s) {
-		settings = s;
+	virtual void setup(settings_t s);
 
-		if (settings.count("seed")) {
-			rng.seed = boost::any_cast<size_t>(settings["seed"]);
-			rng.seed_set = true;
-		} else {
-			rng.initialize();
-		}
-
-		try {
-			runs          = boost::any_cast<size_t>(settings["runs"]);
-			steps         = boost::any_cast<size_t>(settings["steps"]);
-			error_check_f = boost::any_cast<size_t>(settings["error_check_f"]);
-			sampler       = boost::any_cast<size_t>(settings["sampler"]);
-			tag           = boost::any_cast<std::string>(settings["tag"]);
-		} catch(const boost::bad_any_cast &e) {
-			std::cerr << "bla: " << e.what() << std::endl;
-			std::exit(EXIT_FAILURE);
-		}
-
-		// safety check
-		if (steps % error_check_f != 0) {
-			std::cerr << "Error: check-frequency and number of steps don't match" << std::endl;
-			std::exit(EXIT_FAILURE);
-		}
-		size_t error_acc_size = 9 * (size_t)log10(steps / error_check_f) + 1;
-		error_acc.resize(error_acc_size);
-
-		settings["macrostates"] = n_bins;
-
-		read_exact_dos();
-		setup_output();
-	}
-
-	virtual bool run() {
-		switch (sampler) {
-		case 0:
-			mc_loop<BoltzmannSampler>();
-			break;
-		case 1:
-			mc_loop<WangLandauSampler>();
-			break;
-		/*case 2:
-			mc_loop<QualityMeasureBSampler>();
-			break;
-		case 3:
-			mc_loop<QualityMeasureASampler>();
-			break;*/
-		default:
-			std::cerr << "Error: unknown sampler" << std::endl;
-			return false;
-		}
-
-		out << "#\n#          time     mean_error      var_error   mean_error_s    var_error_s       qm_error\n";
-		for (size_t i = 0; i < error_acc.size(); i++) {
-			size_t time  = error_acc[i].step;
-			double mean  = boost::accumulators::mean(error_acc[i].err1);
-			double var   = boost::accumulators::variance(error_acc[i].err1);
-			double mean2 = boost::accumulators::mean(error_acc[i].err2);
-			double var2  = boost::accumulators::variance(error_acc[i].err2);
-			//double qm_err   = error_acc[i].get<5>() / runs;
-			out << std::setw(15) << std::right
-				<< time
-				<< std::setw(15) << std::right
-				<< mean
-				<< std::setw(15) << std::right
-				<< var
-				<< std::setw(15) << std::right
-				<< mean2
-				<< std::setw(15) << std::right
-				<< var2
-				//<< std::setw(15) << std::right
-				//<< qm_err
-				<< "\n";
-
-		}
-		return true;
-	}
+	virtual bool run();
 };
 
 #endif /* end of include guard: ISING_SYSTEM_H */
