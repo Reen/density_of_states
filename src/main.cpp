@@ -587,6 +587,8 @@ private:
 			throw std::runtime_error("Error: could not open output file");
 		}
 
+		out << "# seed: " << seed << '\n';
+
 		if (steps % error_check_f != 0) {
 			throw std::runtime_error("Error: check-frequency and number of steps don't match" );
 		}
