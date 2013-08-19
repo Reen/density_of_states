@@ -233,7 +233,7 @@ std::vector<size_t> build_histogram(const std::vector<double> &data, size_t bins
 	typedef std::vector<double>::const_iterator iterator;
 	std::pair< iterator, iterator > res = boost::minmax_element(data.begin(), data.end());
 	min = *(res.first);
-	max = *(res.second)+std::numeric_limits<double>::epsilon();
+	max = *(res.second)+10*std::numeric_limits<double>::epsilon();
 	double diff = (max-min);
 	bin_width = diff/bins;
 	for (iterator i = data.begin(); i != data.end(); ++i) {
