@@ -370,7 +370,8 @@ private:
 	// random number generator
 	boost::mt19937 rng;
 	size_t seed;
-	bool seed_set;
+	int gengraph_seed;
+	bool seed_set, gengraph_seed_set;
 
 	// simulation variables and structures
 
@@ -431,6 +432,7 @@ private:
 			("seed",          po::value<size_t>(),                                "Random seed")
 			("sampler",       po::value<size_t>(&sampler)->default_value(1),      "Sampler to use: 0 – Boltzmann, 1 – Wang-Landau, 2 – Q-Matrix")
 			("flatness,f",    po::value<double>(&flatness)->default_value(0.99),  "Flatness parameter of the Wang-Landau algorithm")
+			("gengraph_seed", po::value<int>(),                  "Seed for gengraph tool")
 			;
 		po::variables_map vm;
 		po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -448,9 +450,11 @@ private:
 			seed = vm["seed"].as<size_t>();
 			seed_set = true;
 		}
-		//else {
-		//}
-		//std::cout << "random seed: " << seed << std::endl;
+
+		if (vm.count("gengraph_seed")) {
+			gengraph_seed = vm["gengraph_seed"].as<int>();
+			gengraph_seed_set = true;
+		}
 	}
 
 	void initialize_rng()
@@ -547,10 +551,12 @@ private:
 		} else {
 			// create cmd with arguments to run graph utility
 			char buf[1024];
-			boost::uniform_int<> graph_seed_dist(0, INT_MAX);
-			int graph_seed = graph_seed_dist(rng);
+			if (!gengraph_seed_set) {
+				boost::uniform_int<> graph_seed_dist(0, INT_MAX);
+				gengraph_seed = graph_seed_dist(rng);
+			}
 			snprintf(buf, 1024, "echo %lu %lu | %s -s %i",
-					connections, num_config, graph_bin.c_str(), graph_seed);
+					connections, num_config, graph_bin.c_str(), gengraph_seed);
 
 			out << "# " << buf << std::endl;
 			FILE* fd = popen(buf, "r");
