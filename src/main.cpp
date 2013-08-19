@@ -17,6 +17,7 @@
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>
+#include <boost/numeric/ublas/operation.hpp>
 #include <boost/numeric/ublas/io.hpp>
 #include <boost/program_options.hpp>
 #include <boost/cstdint.hpp>
@@ -133,6 +134,71 @@ vector_double_t calculate_dos_gth(matrix_double_t inner_mat) {
 	return dos;
 }
 
+template<class T>
+double power_iteration_dist(const T & v1, const T & v2) {
+	double dist = 0;
+	for (size_t i = 0; i < v1.size(); ++i) {
+		if (v1[i] > 0) {
+			double d = fabs(v2[i] / v1[i] - 1);
+			dist = std::max(dist, d);
+		}
+	}
+	return dist;
+}
+
+/**
+ * Code for power iteration with MTL4 Library
+ */
+/*
+	mtl::matrix::dense2D<double> mat(inner_mat.size1(), inner_mat.size2());
+	for (size_t i = 0; i < inner_mat.size1(); ++i) {
+		for (size_t j = 0; j < inner_mat.size2(); ++j) {
+			mat(i,j) = inner_mat(j,i);
+		}
+	}
+
+	double dist = -1;
+	mtl::dense_vector<double> tmp(mat.num_rows());
+	mtl::dense_vector<double> dos(mat.num_rows(), 1.0/mat.num_rows());
+	for (size_t i = 0; i < 10000; i++) {
+		tmp = mat * dos;
+		tmp /= mtl::one_norm(tmp);
+		dos = mat * tmp;
+		dos /= mtl::one_norm(dos);
+		dist = power_iteration_dist(tmp, dos);
+		if (dist == 0) {
+			//std::cout << i << " " << dist << std::endl;
+			break;
+		}
+	}
+	vector_double_t ret(inner_mat.size1(), 1.0/inner_mat.size1());
+	std::copy(dos.begin(), dos.end(), ret.begin());
+	return ret;
+*/
+
+
+vector_double_t calculate_dos_power_iteration(const matrix_double_t & inner_mat) {
+	using namespace boost::numeric::ublas;
+	matrix_double_t mat(trans(inner_mat));
+	vector_double_t dos(mat.size1(), 1.0/mat.size1());
+	vector_double_t tmp(mat.size1(), 1.0/mat.size1());
+
+	// do at most 100000 steps
+	for (size_t i = 0; i < 100000; i+=2) {
+		axpy_prod(mat, dos, tmp, true);
+		tmp /= norm_1(tmp);
+		axpy_prod(mat, tmp, dos, true);
+		dos /= norm_1(dos);
+		double dist = power_iteration_dist(tmp, dos);
+		if (dist == 0) {
+			//std::cout << i << " " << dist << std::endl;
+			break;
+		}
+	}
+
+	return dos;
+}
+
 matrix_double_t normalize_q(const matrix_int_t & Q) {
 	using namespace boost::numeric::ublas;
 	matrix_double_t Qd(Q);
@@ -146,6 +212,10 @@ matrix_double_t normalize_q(const matrix_int_t & Q) {
 
 double calculate_error_q(const vector_double_t &exact, const matrix_double_t &Qd) {
 	vector_double_t dos(calculate_dos_gth(Qd));
+	if (std::count_if(dos.begin(), dos.end(), boost::math::isnan<double>) > 0) {
+		//std::cout << "switching to power iteration" << std::endl;
+		dos = calculate_dos_power_iteration(Qd);
+	}
 	return calculate_error(exact, dos);
 }
 
