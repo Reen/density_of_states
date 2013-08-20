@@ -237,8 +237,8 @@ std::vector<size_t> build_histogram(const std::vector<double> &data, size_t bins
 	double diff = (max-min);
 	bin_width = diff/bins;
 	for (iterator i = data.begin(); i != data.end(); ++i) {
-		size_t index = (*i-min)/bin_width;
-		if (index < 0 || index >= hist.size()) {
+		int index = (*i-min)/bin_width;
+		if (index < 0 || (size_t)index >= hist.size()) {
 			std::cerr << "Error: index of histogram out of bounds." << std::endl;
 			std::cerr << *i << " " << index << " " << min << " " << max << std::endl;
 		}
@@ -324,7 +324,7 @@ public:
 
 	void check(const size_t & step, const size_t &run) {
 		int min = *std::min_element(H.begin(), H.end());
-		if (min > 0 && (min > (0.99 * sum(H))/macro_states)) {
+		if (min > 0 && (min > (flatness * sum(H))/macro_states)) {
 			H *= 0;
 			ln_f /= 2.0;
 #if VERBOSE == 1
