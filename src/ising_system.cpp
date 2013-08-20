@@ -122,12 +122,12 @@ bool IsingSystem::run() {
 	case 1:
 		mc_loop<WangLandauSampler>();
 		break;
-	/*case 2:
+	case 2:
 		mc_loop<QualityMeasureBSampler>();
 		break;
 	case 3:
 		mc_loop<QualityMeasureASampler>();
-		break;*/
+		break;
 	default:
 		std::cerr << "Error: unknown sampler" << std::endl;
 		return false;

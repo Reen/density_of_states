@@ -154,33 +154,33 @@ public:
 	}
 
 	bool has_own_statistics() {
-		//return true;
-		return false;
+		return true;
+		//return false;
 	}
 
-	//double calculate_error(const vector_double_t &exact) {
-		//return ::calculate_error(exact, g, true);
-	//}
+	double calculate_error(const vector_double_t &exact) {
+		return ::calculate_error(exact, g, true);
+	}
 };
 
-#if 0
 class QualityMeasureBSampler : public MCSampler {
 private:
 	const matrix_int_t& Q;
 public:
-	QualityMeasureBSampler(boost::mt19937 &rng, size_t ms, double, double, double, const matrix_int_t& qmat)
-		: MCSampler(rng, ms), Q(qmat) {
+	QualityMeasureBSampler(boost::mt19937 &rng, const matrix_int_t& qmat, const settings_t &settings)
+		: MCSampler(rng, settings), Q(qmat) {
 	}
 
-	bool operator()(const int &E_old, const int &E_new) {
+	template<class T1, class T2>
+	bool operator()(const T1 &dE, const T2 &i_old, const T2 &i_new) {
 		size_t Hold_sum(0), Hnew_sum(0), Hold_cnt(0), Hnew_cnt(0);
 		for (size_t i = 0; i < Q.size1(); i++) {
-			if (Q(E_old,i) != 0) {
-				Hold_sum += Q(E_old,i);
+			if (Q(i_old,i) != 0) {
+				Hold_sum += Q(i_old,i);
 				Hold_cnt += 1;
 			}
-			if (Q(E_new,i) != 0) {
-				Hnew_sum += Q(E_new,i);
+			if (Q(i_new,i) != 0) {
+				Hnew_sum += Q(i_new,i);
 				Hnew_cnt += 1;
 			}
 		}
@@ -194,7 +194,7 @@ public:
 		}
 		bool res = ((Hold >= Hnew) || (dist01(rng) <= exp(Hold-Hnew)));
 #if VERBOSE == 1
-		//std::cout << E_old << " " << E_new << " " << Hold << " " << Hnew << " " << res << std::endl;
+		//std::cout << i_old << " " << i_new << " " << Hold << " " << Hnew << " " << res << std::endl;
 #endif
 		return res;
 	}
@@ -211,19 +211,20 @@ class QualityMeasureASampler : public MCSampler {
 private:
 	const matrix_int_t& Q;
 public:
-	QualityMeasureASampler(boost::mt19937 &rng, size_t ms, double, double, double, const matrix_int_t& qmat)
-		: MCSampler(rng, ms), Q(qmat) {
+	QualityMeasureASampler(boost::mt19937 &rng, const matrix_int_t& qmat, const settings_t &settings)
+		: MCSampler(rng, settings), Q(qmat) {
 	}
 
-	bool operator()(const int &E_old, const int &E_new) {
+	template<class T1, class T2>
+	bool operator()(const T1 &dE, const T2 &i_old, const T2 &i_new) {
 		size_t Hold_sum(0), Hnew_sum(0);
 		for (size_t i = 0; i < Q.size1(); i++) {
-			Hold_sum += Q(E_old,i);
-			Hnew_sum += Q(E_new,i);
+			Hold_sum += Q(i_old,i);
+			Hnew_sum += Q(i_new,i);
 		}
 		bool res = ((Hold_sum >= Hnew_sum) || (dist01(rng) <= exp(Hold_sum-Hnew_sum)));
 #if VERBOSE == 1
-		//std::cout << E_old << " " << E_new << " " << Hold << " " << Hnew << " " << res << std::endl;
+		//std::cout << i_old << " " << i_new << " " << Hold << " " << Hnew << " " << res << std::endl;
 #endif
 		return res;
 	}
@@ -235,6 +236,5 @@ public:
 	}
 };
 
-#endif
 
 #endif /* end of include guard: MC_SAMPLER_H */
