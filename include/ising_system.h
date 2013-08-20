@@ -191,15 +191,15 @@ private:
 		std::string format;
 		switch (sampler) {
 			case 1:
-				format = "dos_%1%_%2%S_%3%R_%4%M_%6$0.2ff%7%%8%.out";
+				format = "ising_%1%_%2%S_%3%R_%4%M_%6$0.2ff%7%%8%.out";
 				break;
 			case 2:
 			case 3:
-				format = "dos_%1%_%2%S_%3%R_%4%M%7%%8%.out";
+				format = "ising_%1%_%2%S_%3%R_%4%M%7%%8%.out";
 				break;
 			case 0:
 			default:
-				format = "dos_%1%_%2%S_%3%R_%4%M_%5$0.2fT%7%%8%.out";
+				format = "ising_%1%_%2%S_%3%R_%4%M_%5$0.2fT%7%%8%.out";
 		}
 		std::string buf = str( boost::format(format)
 				% sampler_string[sampler]
