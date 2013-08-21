@@ -270,7 +270,7 @@ private:
 	double kB;
 	double T;
 public:
-	BoltzmannSampler(boost::mt19937 &rng, size_t ms, double _kB, double _T, double, const matrix_int_t&)
+	BoltzmannSampler(boost::mt19937 &rng, size_t ms, double _kB, double _T, double, const matrix_int_t&, const size_t &step)
 		: MCSampler(rng, ms), kB(_kB), T(_T) {
 	}
 
@@ -291,7 +291,7 @@ private:
 	double ln_f;
 	double flatness;
 public:
-	WangLandauSampler(boost::mt19937 &rng, size_t ms, double, double, double f, const matrix_int_t&)
+	WangLandauSampler(boost::mt19937 &rng, size_t ms, double, double, double f, const matrix_int_t&, const size_t &step)
 		: MCSampler(rng, ms), H(ms), g(ms), ln_f(1.0), flatness(f) {
 		H *= 0;
 		g *= 0;
@@ -344,11 +344,74 @@ public:
 	}
 };
 
+class WangLandau1tSampler : public MCSampler {
+private:
+	vector_int_t H;
+	vector_double_t g;
+	double ln_f;
+	double flatness;
+	bool one_t_running;
+	const size_t & mc_step;
+public:
+	WangLandau1tSampler(boost::mt19937 &rng, size_t ms, double, double, double f, const matrix_int_t&, const size_t &step)
+		: MCSampler(rng, ms), H(ms), g(ms), ln_f(1.0), flatness(f), one_t_running(false), mc_step(step) {
+		H *= 0;
+		g *= 0;
+		for (size_t i = 0; i < ms; i++) {
+			assert(H[i] == 0);
+			assert(g[i] == 0);
+		}
+	}
+
+	bool operator()(const int &E_old, const int &E_new) {
+		using namespace std;
+		bool res = ((g[E_old] >= g[E_new]) || (dist01(rng) <= exp(g[E_old]-g[E_new])));
+		if (one_t_running) {
+			ln_f = 1.0/mc_step;
+		}
+
+		if (res) {
+			H[E_new]++;
+			g[E_new]+=ln_f;
+		} else {
+			H[E_old]++;
+			g[E_old]+=ln_f;
+		}
+		return res;
+	}
+
+	void check(const size_t & step, const size_t &run) {
+		if (!one_t_running) {
+			int min = *std::min_element(H.begin(), H.end());
+			if (min > 0 && (min > (flatness * sum(H))/macro_states)) {
+				H *= 0;
+				ln_f /= 2.0;
+#if VERBOSE == 1
+				std::cout << std::setw(15) << std::right << run
+						  << std::setw(15) << std::right << step
+						  << std::setw(15) << std::right << ln_f << "\n";
+#endif
+			}
+		}
+		if (ln_f < 1.0/step) {
+			one_t_running = true;
+		}
+	}
+
+	bool has_own_statistics() {
+		return true;
+	}
+
+	double calculate_error(const vector_double_t &exact) {
+		return ::calculate_error(exact, g, true);
+	}
+};
+
 class QualityMeasureBSampler : public MCSampler {
 private:
 	const matrix_int_t& Q;
 public:
-	QualityMeasureBSampler(boost::mt19937 &rng, size_t ms, double, double, double, const matrix_int_t& qmat)
+	QualityMeasureBSampler(boost::mt19937 &rng, size_t ms, double, double, double, const matrix_int_t& qmat, const size_t &step)
 		: MCSampler(rng, ms), Q(qmat) {
 	}
 
@@ -391,7 +454,7 @@ class QualityMeasureASampler : public MCSampler {
 private:
 	const matrix_int_t& Q;
 public:
-	QualityMeasureASampler(boost::mt19937 &rng, size_t ms, double, double, double, const matrix_int_t& qmat)
+	QualityMeasureASampler(boost::mt19937 &rng, size_t ms, double, double, double, const matrix_int_t& qmat, const size_t &step)
 		: MCSampler(rng, ms), Q(qmat) {
 	}
 
@@ -420,7 +483,7 @@ private:
 	const matrix_int_t& Q;
 	vector_int_t column_sum;
 public:
-	TransitionMatrixSampler(boost::mt19937 &rng, size_t ms, double, double, double, const matrix_int_t& qmat)
+	TransitionMatrixSampler(boost::mt19937 &rng, size_t ms, double, double, double, const matrix_int_t& qmat, const size_t &step)
 		: MCSampler(rng, ms), Q(qmat), column_sum(qmat.size1(),0) {
 	}
 	bool operator()(const int &E_old, const int &E_new) {
@@ -597,6 +660,7 @@ private:
 		std::string format;
 		switch(sampler) {
 		case 1:
+		case 5:
 			format = "dos_%1%_%2%S_%3%R_%4%M_%5%C_%7$0.2ff%8%%9%.out";
 			break;
 		case 2:
@@ -777,9 +841,10 @@ private:
 			size_t state = select_pos(rng);
 			Q = boost::numeric::ublas::zero_matrix<int64_t>(macro_states, macro_states);
 			//std::cout << "Q: " << Q << std::endl;
-			Sampler sampler(rng, macro_states, kB, T, flatness, Q);
+			size_t step = 1;
 			size_t index = 0;
-			for (size_t step = 1; step <= steps; step++) {
+			Sampler sampler(rng, macro_states, kB, T, flatness, Q, step);
+			for (; step <= steps; step++) {
 				size_t new_state = mt(state, select_pos(rng));
 				int Eold = config_to_energy[state];
 				int Enew = config_to_energy[new_state];
@@ -830,6 +895,7 @@ public:
 		sampler_string.push_back("QB");
 		sampler_string.push_back("QA");
 		sampler_string.push_back("TM");
+		sampler_string.push_back("1T");
 
 		// determin path to the "graph" executable
 		// to add more OS see:
@@ -907,6 +973,9 @@ public:
 			break;
 		case 4:
 			mc_loop<TransitionMatrixSampler>();
+			break;
+		case 5:
+			mc_loop<WangLandau1tSampler>();
 			break;
 		default:
 			std::cerr << "Error: unknown sampler" << std::endl;
