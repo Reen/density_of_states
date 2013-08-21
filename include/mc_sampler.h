@@ -10,6 +10,9 @@
 
 #include "typedefs.h"
 
+/**
+ * MCSampler
+ */
 class MCSampler {
 protected:
 	boost::mt19937 &rng;
@@ -33,6 +36,9 @@ public:
 };
 
 
+/**
+ * BoltzmannFunctor
+ */
 class BoltzmannFunctor {
 	const double &kB;
 	const double &T;
@@ -47,6 +53,9 @@ public:
 	}
 };
 
+/**
+ * BoltzmannTableFunctor
+ */
 class BoltzmannTableFunctor {
 	const double &kB;
 	const double &T;
@@ -65,6 +74,9 @@ public:
 	}
 };
 
+/**
+ * BoltzmannSampler
+ */
 template<class expfn_t>
 class BoltzmannSampler : public MCSampler {
 private:
@@ -94,6 +106,9 @@ public:
 	}
 };
 
+/**
+ * WangLandauSampler
+ */
 class WangLandauSampler : public MCSampler {
 private:
 	vector_int_t H;
@@ -163,6 +178,41 @@ public:
 	}
 };
 
+/**
+ * QualityMeasureASampler
+ */
+class QualityMeasureASampler : public MCSampler {
+private:
+	const matrix_int_t& Q;
+public:
+	QualityMeasureASampler(boost::mt19937 &rng, const matrix_int_t& qmat, const settings_t &settings)
+		: MCSampler(rng, settings), Q(qmat) {
+	}
+
+	template<class T1, class T2>
+	bool operator()(const T1 &dE, const T2 &i_old, const T2 &i_new) {
+		size_t Hold_sum(0), Hnew_sum(0);
+		for (size_t i = 0; i < Q.size1(); i++) {
+			Hold_sum += Q(i_old,i);
+			Hnew_sum += Q(i_new,i);
+		}
+		bool res = ((Hold_sum >= Hnew_sum) || (dist01(rng) <= exp(Hold_sum-Hnew_sum)));
+#if VERBOSE == 1
+		//std::cout << i_old << " " << i_new << " " << Hold << " " << Hnew << " " << res << std::endl;
+#endif
+		return res;
+	}
+
+	void check(const size_t &step, const size_t &run) {}
+
+	bool has_own_statistics() {
+		return false;
+	}
+};
+
+/**
+ * QualityMeasureBSampler
+ */
 class QualityMeasureBSampler : public MCSampler {
 private:
 	const matrix_int_t& Q;
@@ -193,36 +243,6 @@ public:
 			Hnew = Hnew_sum / (double)(Hnew_cnt);
 		}
 		bool res = ((Hold >= Hnew) || (dist01(rng) <= exp(Hold-Hnew)));
-#if VERBOSE == 1
-		//std::cout << i_old << " " << i_new << " " << Hold << " " << Hnew << " " << res << std::endl;
-#endif
-		return res;
-	}
-
-	void check(const size_t &step, const size_t &run) {}
-
-	bool has_own_statistics() {
-		return false;
-	}
-};
-
-
-class QualityMeasureASampler : public MCSampler {
-private:
-	const matrix_int_t& Q;
-public:
-	QualityMeasureASampler(boost::mt19937 &rng, const matrix_int_t& qmat, const settings_t &settings)
-		: MCSampler(rng, settings), Q(qmat) {
-	}
-
-	template<class T1, class T2>
-	bool operator()(const T1 &dE, const T2 &i_old, const T2 &i_new) {
-		size_t Hold_sum(0), Hnew_sum(0);
-		for (size_t i = 0; i < Q.size1(); i++) {
-			Hold_sum += Q(i_old,i);
-			Hnew_sum += Q(i_new,i);
-		}
-		bool res = ((Hold_sum >= Hnew_sum) || (dist01(rng) <= exp(Hold_sum-Hnew_sum)));
 #if VERBOSE == 1
 		//std::cout << i_old << " " << i_new << " " << Hold << " " << Hnew << " " << res << std::endl;
 #endif
