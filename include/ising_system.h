@@ -187,6 +187,7 @@ private:
 		sampler_string.push_back("WL");
 		sampler_string.push_back("QB");
 		sampler_string.push_back("QA");
+		sampler_string.push_back("TM");
 
 		std::string format;
 		switch (sampler) {
@@ -195,6 +196,7 @@ private:
 				break;
 			case 2:
 			case 3:
+			case 4:
 				format = "ising_%1%_%2%S_%3%R_%4%M%7%%8%.out";
 				break;
 			case 0:

@@ -236,5 +236,47 @@ public:
 	}
 };
 
+/**
+ * TransitionMatrixSampler
+ *
+ * Following wang.j.02.transition.245 and shell.m.03.improved.9406.
+ */
+class TransitionMatrixSampler : public MCSampler {
+private:
+	const matrix_int_t& Q;
+	vector_int_t column_sum;
+public:
+	TransitionMatrixSampler(boost::mt19937 &rng, const matrix_int_t& qmat, const settings_t &settings)
+		: MCSampler(rng, settings), Q(qmat), column_sum(qmat.size1(),0) {
+	}
+	bool operator()(const int &E_old, const int &E_new) {
+		column_sum[E_old]++;
+#ifndef NDEBUG
+		//int Hold_sum(0), Hnew_sum(0);
+		//for (size_t i = 0; i < Q.size1(); i++) {
+			//Hold_sum += Q(E_old,i);
+			//Hnew_sum += Q(E_new,i);
+		//}
+		//assert(column_sum[E_old]==Hold_sum);
+		//assert(column_sum[E_new]==Hnew_sum);
+#endif
+		if (column_sum[E_new] == 0 || column_sum[E_old] == 0) {
+			return true;
+		}
+		double Tji, Tij;
+		Tji = (double)Q(E_new, E_old) / column_sum[E_new];
+		Tij = (double)Q(E_old, E_new) / column_sum[E_old];
+		bool res = ((Tji >= Tij) || (dist01(rng) <= (Tji / Tij)));
+		//std::cout << __LINE__ << " " << res << " " << Tji << " " << Tij << std::endl;
+		return res;
+	}
+
+	void check(const size_t &step, const size_t &run) {}
+
+	bool has_own_statistics() {
+		return false;
+	}
+};
+
 
 #endif /* end of include guard: MC_SAMPLER_H */
