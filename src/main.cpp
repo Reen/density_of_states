@@ -538,7 +538,7 @@ private:
 			("seed",          po::value<size_t>(),                                "Random seed")
 			("sampler",       po::value<size_t>(&sampler)->default_value(1),      "Sampler to use: 0 – Boltzmann, 1 – Wang-Landau, 2 – Q-Matrix")
 			("flatness,f",    po::value<double>(&flatness)->default_value(0.99),  "Flatness parameter of the Wang-Landau algorithm")
-			("gengraph_seed", po::value<int>(),                  "Seed for gengraph tool")
+			("gengraph_seed", po::value<int>(),                                   "Seed for gengraph tool")
 			;
 		po::variables_map vm;
 		po::store(po::parse_command_line(argc, argv, desc), vm);
