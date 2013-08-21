@@ -59,8 +59,9 @@ vector_double_t rhab::calculate_dos_gth(matrix_double_t inner_mat) {
 	return dos;
 }
 
-vector_double_t rhab::calculate_dos_power(matrix_double_t mat) {
+vector_double_t rhab::calculate_dos_power(const matrix_double_t &imat) {
 	namespace ublas = boost::numeric::ublas;
+	matrix_double_t mat(ublas::trans(imat));
 	vector_double_t t1(mat.size1());
 	vector_double_t t2(mat.size1());
 	vector_double_t t3(mat.size1());
@@ -71,12 +72,10 @@ vector_double_t rhab::calculate_dos_power(matrix_double_t mat) {
 	rhab::basic_iteration<vector_double_t::iterator> iter(max_iter, 1e-8);
 	do {
 		++iter;
-		noalias(t2) = ublas::prod(t1, mat);
-		//ublas::axpy_prod(t1, mat, t2, true);
+		ublas::axpy_prod(mat, t1, t2, true);
 		t2 /= ublas::norm_1(t2);
 		++iter;
-		noalias(t1) = ublas::prod(t2, mat);
-		//ublas::axpy_prod(t2, mat, t1, true);
+		ublas::axpy_prod(mat, t2, t1, true);
 		t1 /= ublas::norm_1(t1);
 	} while(!iter.converged(t2.begin(), t2.end(), t1.begin(), dist));
 
