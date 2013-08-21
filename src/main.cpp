@@ -624,6 +624,10 @@ private:
 			throw std::runtime_error("Error: could not open output file");
 		}
 
+		out << "# Toy Dos Version: "
+			<< VERSION_MAJOR << "."
+			<< VERSION_MINOR << "-"
+			<< g_GIT_SHA1 << '\n';
 		out << "# seed: " << seed << '\n';
 
 		if (steps % error_check_f != 0) {
