@@ -157,7 +157,7 @@ public:
 
 	void check(const size_t & step, const size_t &run) {
 		int min = *std::min_element(H.begin(), H.end());
-		if (min > 0 && (min > (0.99 * sum(H))/macrostates)) {
+		if (min > 0 && (min > (flatness * sum(H))/macrostates)) {
 			H *= 0;
 			ln_f /= 2.0;
 #if VERBOSE == 1
