@@ -116,9 +116,10 @@ private:
 	double ln_f;
 	double flatness;
 	size_t macrostates;
+	size_t last_refinement_step;
 public:
 	WangLandauSampler(boost::mt19937 &rng, const matrix_int_t&, const settings_t &settings)
-		: MCSampler(rng, settings), ln_f(1.0)
+		: MCSampler(rng, settings), ln_f(1.0), last_refinement_step(0)
 	{
 		macrostates = boost::any_cast<size_t>(settings.find("macrostates")->second);
 		flatness    = boost::any_cast<double>(settings.find("flatness")->second);
@@ -156,8 +157,24 @@ public:
 	}
 
 	void check(const size_t & step, const size_t &run) {
-		int min = *std::min_element(H.begin(), H.end());
-		if (min > 0 && (min > (flatness * sum(H))/macrostates)) {
+		if ((step-last_refinement_step) < 10*H.size()) {
+			return;
+		}
+		int minH = INT_MAX;
+		int countH = 0;
+		int sumH = 0;
+		for (size_t i = 0; i < H.size(); ++i) {
+			if (H[i] > 0) {
+				countH++;
+				sumH += H[i];
+				if (H[i] < minH) {
+					minH = H[i];
+				}
+			}
+		}
+		//std::cout << minH << " " <<  ((flatness * sumH)/countH) << " " <<  (minH > (flatness * sumH)/countH) << std::endl;
+		if (minH > (flatness * sumH)/countH) {
+			last_refinement_step = step;
 			H *= 0;
 			ln_f /= 2.0;
 #if VERBOSE == 1

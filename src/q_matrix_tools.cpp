@@ -45,7 +45,7 @@ vector_double_t rhab::calculate_dos_gth(matrix_double_t inner_mat) {
 	for (std::size_t i = 1; i < inner_rows; ++i) {
 		//std::cout << i << " " << dos.data()[i-1] << ": ";
 		for (std::size_t j = 0; j < i; ++j) {
-			//std::cout << "(" << dos.data()[j] << " " << dos.data()[i-1] << " " << log(whole(j,i)) << ") ";
+			//std::cout << "(" << dos.data()[j] << " " << dos.data()[i-1] << " " << log(inner_mat(j,i)) << ") ";
 			dos[i] += exp(dos[j] - dos[i-1] + log(inner_mat(j,i)));
 		}
 		//std::cout << ": "<< dos.data()[i] << "\n";
@@ -92,6 +92,16 @@ double rhab::calculate_error(const vector_double_t &exact, const vector_double_t
 	vector_double_t::const_iterator i2 = exact.begin();
 	double sum = 0.0;
 	if (normalize) {
+		/**
+		 * Density of states provided in dos is actually \ln(\Omega).
+		 * Find the largest value, then subtract it from dos[i]
+		 * and sum exp(dos[i] - max) to calculate the norm.
+		 * Then divide the every exp(dos[i] - max) by the norm
+		 * and subtract the exact value, i.e. exact[i].
+		 * Calculate the absolute value of it and divide by exact[i].
+		 *
+		 * exact[i] is assumed to be positive
+		 */
 		double norm = 0;
 		double max  = *(std::max_element(dos.begin(), dos.end()));
 		for (; i1 != dos.end(); i1++) {
@@ -104,7 +114,10 @@ double rhab::calculate_error(const vector_double_t &exact, const vector_double_t
 		}
 		i1 = dos.begin();
 		for (; i1 != dos.end(); i1++, i2++) {
-			sum += fabs((exp(*i1-max)/norm - *i2) / (*i2));
+			// Be careful here and do not devide by 0
+			if ((*i2) > 0) {
+				sum += fabs((exp(*i1-max)/norm - *i2) / (*i2));
+			}
 #ifdef DEBUG
 			if (!boost::math::isfinite(sum) || !boost::math::isfinite(*i2)) {
 				std::cerr << __FILE__ << ":" << __LINE__ << " " << sum << " " << norm << " " << *i1 <<  " " << *i2 << std::endl;
@@ -114,7 +127,8 @@ double rhab::calculate_error(const vector_double_t &exact, const vector_double_t
 		//std::cout << std::setprecision(22) << norm << " " << sum << " " << dos << " " << norm << std::endl;
 	} else {
 		for (; i1 != dos.end(); i1++, i2++) {
-			if ((*i2) != 0.) {
+			// Be careful here and do not devide by 0
+			if ((*i2) > 0) {
 				sum += fabs((*i1 - *i2) / (*i2));
 			}
 #ifdef DEBUG
@@ -128,6 +142,16 @@ double rhab::calculate_error(const vector_double_t &exact, const vector_double_t
 }
 
 double rhab::calculate_error_q(const vector_double_t &exact, const matrix_double_t &Qd) {
-	vector_double_t dos(calculate_dos_power(Qd));
+	vector_double_t dos(calculate_dos_gth(Qd));
+	if (std::count_if(dos.begin(), dos.end(), boost::math::isnan<double>) > 0) {
+#ifdef DEBUG
+		std::cout << __FILE__ << ":" << __LINE__ << " GTH unsuccessful" << std::endl;
+#endif
+		dos = calculate_dos_power(Qd);
+	} else {
+#ifdef DEBUG
+		std::cout << __FILE__ << ":" << __LINE__ << " GTH successful" << std::endl;
+#endif
+	}
 	return calculate_error(exact, dos);
 }

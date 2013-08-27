@@ -19,7 +19,7 @@ namespace rhab {
 					++iter1, ++iter2) {
 				if (*iter1 > 0) {
 					if (converged && fabs((*iter2)/(*iter1)-1.0) > relative_eps_) {
-						dist = (*iter2)/(*iter1);
+						dist = fabs((*iter2)/(*iter1)-1.0);
 						converged = false;
 						break;
 					}

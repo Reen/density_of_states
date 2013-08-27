@@ -1029,7 +1029,7 @@ public:
 		}
 		out << '\n';
 
-	out.close();
+		out.close();
 		return true;
 	}
 };
