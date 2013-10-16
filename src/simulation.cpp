@@ -143,18 +143,10 @@ bool Simulation::run() {
 }
 
 int Simulation::exec(int argc, char *argv[]) {
-	try {
-		parse_arguments(argc, argv);
-		setup_variables();
-	} catch(std::exception& e) {
-		std::cerr << "error: " << e.what() << std::endl;
-		return EXIT_FAILURE;
-	} catch(...) {
-		std::cerr << "Exception of unknown type!" << std::endl;
-		return EXIT_FAILURE;
-	}
 
-	
+	parse_arguments(argc, argv);
+	setup_variables();
+
 	return (run() ? EXIT_SUCCESS : EXIT_FAILURE);
 }
 
