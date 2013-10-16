@@ -116,10 +116,10 @@ private:
 	double ln_f;
 	double flatness;
 	size_t macrostates;
-	size_t last_refinement_step;
+	size_t last_refinement_step, last_checked;
 public:
 	WangLandauSampler(boost::mt19937 &rng, const matrix_int_t&, const settings_t &settings)
-		: MCSampler(rng, settings), ln_f(1.0), last_refinement_step(0)
+		: MCSampler(rng, settings), ln_f(1.0), last_refinement_step(0), last_checked(0)
 	{
 		macrostates = boost::any_cast<size_t>(settings.find("macrostates")->second);
 		flatness    = boost::any_cast<double>(settings.find("flatness")->second);
@@ -157,9 +157,10 @@ public:
 	}
 
 	void check(const size_t & step, const size_t &run) {
-		if ((step-last_refinement_step) < 10*H.size()) {
+		if ((step-last_checked) < 10*H.size() || (step-last_refinement_step) < 10*H.size()) {
 			return;
 		}
+		last_checked = step;
 		int minH = INT_MAX;
 		int countH = 0;
 		int sumH = 0;
