@@ -179,45 +179,7 @@ private:
 
 	void read_exact_dos();
 
-
-	void setup_output() {
-		std::vector<std::string> sampler_string;
-		// initialize list of available samplers
-		sampler_string.push_back("BM");
-		sampler_string.push_back("WL");
-		sampler_string.push_back("QB");
-		sampler_string.push_back("QA");
-		sampler_string.push_back("TM");
-
-		std::string format;
-		switch (sampler) {
-			case 1:
-				format = "ising_%1%_%2%S_%3%R_%4%M_%6$0.2ff%7%%8%.out";
-				break;
-			case 2:
-			case 3:
-			case 4:
-				format = "ising_%1%_%2%S_%3%R_%4%M%7%%8%.out";
-				break;
-			case 0:
-			default:
-				format = "ising_%1%_%2%S_%3%R_%4%M_%5$0.2fT%7%%8%.out";
-		}
-		std::string buf = str( boost::format(format)
-				% sampler_string[sampler]
-				% steps
-				% runs
-				% n_bins
-				% boost::any_cast<double>(settings["temperature"])
-				% boost::any_cast<double>(settings["flatness"])
-				% (tag.size() > 0 ? "_" : "")
-				% tag
-			);
-		out.open( buf.c_str() );
-		if (!out.good()) {
-			throw std::runtime_error("Error: could not open output file");
-		}
-	}
+	void setup_output();
 
 public:
 	IsingSystem();
