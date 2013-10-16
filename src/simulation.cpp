@@ -85,6 +85,8 @@ void Simulation::parse_arguments(int argc, char *argv[]) {
 			}
 			std::cerr << std::endl;
 			std::exit(EXIT_FAILURE);
+		} else {
+			simulation_systems[vm["system"].as<std::string>()]->parse_arguments(vm);
 		}
 	}
 
@@ -135,7 +137,7 @@ std::string get_executable_path() {
 void Simulation::setup_variables() {
 	settings["executable_path"] = get_executable_path();
 
-	simulation_systems[system]->setup(settings);
+	simulation_systems[system]->setup();
 }
 
 bool Simulation::run() {

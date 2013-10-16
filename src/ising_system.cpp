@@ -115,7 +115,7 @@ void IsingSystem::setup_output() {
 /**
  * Constructor
  */
-IsingSystem::IsingSystem() {}
+IsingSystem::IsingSystem(settings_t &s) : SimulationSystem(s) {}
 
 po::options_description IsingSystem::get_program_options() {
 	po::options_description desc("Ising System Options");
@@ -132,8 +132,10 @@ po::options_description IsingSystem::get_program_options() {
 	return desc;
 }
 
-void IsingSystem::setup(settings_t s) {
-	SimulationSystem::setup(s);
+void IsingSystem::parse_arguments(boost::program_options::variables_map &vm) {}
+
+void IsingSystem::setup() {
+	SimulationSystem::setup();
 
 	try {
 		sampler       = boost::any_cast<size_t>(settings["sampler"]);

@@ -227,7 +227,7 @@ bool ToyDosSystem::has_regular_graph(size_t n, size_t r) {
 /**
  * Constructor
  */
-ToyDosSystem::ToyDosSystem() {}
+ToyDosSystem::ToyDosSystem(settings_t &s) : SimulationSystem(s) {}
 
 po::options_description ToyDosSystem::get_program_options() {
 	po::options_description desc("ToyDos System Options");
@@ -248,8 +248,14 @@ po::options_description ToyDosSystem::get_program_options() {
 	return desc;
 }
 
-void ToyDosSystem::setup(settings_t s) {
-	SimulationSystem::setup(s);
+void ToyDosSystem::parse_arguments(boost::program_options::variables_map &vm) {
+	if (vm.count("macrostates")) {
+		settings["macrostates"] = vm["macrostates"].as<size_t>();
+	}
+}
+
+void ToyDosSystem::setup() {
+	SimulationSystem::setup();
 
 	try {
 		graph_bin     = boost::any_cast<std::string>(settings["executable_path"]) + "/graph";

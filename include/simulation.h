@@ -51,8 +51,8 @@ public:
 	{
 		using namespace boost::assign;
 		insert(simulation_systems)
-			("Ising",  boost::shared_ptr<SimulationSystem>(new IsingSystem()))
-			("ToyDos", boost::shared_ptr<SimulationSystem>(new ToyDosSystem()))
+			("Ising",  boost::shared_ptr<SimulationSystem>(new IsingSystem(settings)))
+			("ToyDos", boost::shared_ptr<SimulationSystem>(new ToyDosSystem(settings)))
 			;
 	}
 

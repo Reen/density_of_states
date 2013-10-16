@@ -141,11 +141,13 @@ private:
 
 	void setup_output();
 public:
-	ToyDosSystem();
+	ToyDosSystem(settings_t &s);
 
 	virtual boost::program_options::options_description get_program_options();
 
-	virtual void setup(settings_t s);
+	virtual void parse_arguments(boost::program_options::variables_map &vm);
+
+	virtual void setup();
 
 	virtual bool run();
 

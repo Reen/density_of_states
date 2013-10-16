@@ -13,7 +13,7 @@
 
 class SimulationSystem {
 protected:
-	settings_t settings;
+	settings_t &settings;
 	size_t steps;
 	size_t runs;
 	size_t error_check_f;
@@ -29,9 +29,12 @@ protected:
 	virtual void setup_output() = 0;
 
 public:
+	SimulationSystem(settings_t &s);
+
 	virtual boost::program_options::options_description get_program_options() = 0;
+	virtual void parse_arguments(boost::program_options::variables_map &vm) = 0;
 	virtual bool run() = 0;
-	virtual void setup(settings_t s);
+	virtual void setup();
 
 	SimulationRNG rng;
 

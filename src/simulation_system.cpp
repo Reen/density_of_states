@@ -1,8 +1,9 @@
 #include "simulation_system.h"
 
-void SimulationSystem::setup(settings_t s) {
-	settings = s;
+SimulationSystem::SimulationSystem(settings_t &s) : settings(s) {};
 
+
+void SimulationSystem::setup() {
 	if (settings.count("seed")) {
 		rng.seed = boost::any_cast<size_t>(settings["seed"]);
 		rng.seed_set = true;
