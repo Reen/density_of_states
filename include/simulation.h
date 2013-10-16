@@ -19,6 +19,7 @@
 #include "GitSHA1.h"
 #include "simulation_system.h"
 #include "ising_system.h"
+#include "toydos_system.h"
 
 
 
@@ -50,7 +51,8 @@ public:
 	{
 		using namespace boost::assign;
 		insert(simulation_systems)
-			("Ising", boost::shared_ptr<SimulationSystem>(new IsingSystem()))
+			("Ising",  boost::shared_ptr<SimulationSystem>(new IsingSystem()))
+			("ToyDos", boost::shared_ptr<SimulationSystem>(new ToyDosSystem()))
 			;
 	}
 

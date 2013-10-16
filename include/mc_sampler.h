@@ -192,7 +192,7 @@ public:
 	}
 
 	double calculate_error(const vector_double_t &exact) {
-		return ::calculate_error(exact, g, true);
+		return rhab::calculate_error(exact, g, true);
 	}
 };
 

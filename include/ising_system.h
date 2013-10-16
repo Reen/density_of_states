@@ -5,21 +5,6 @@
 // C++ Standard Library
 #include <vector>
 
-// Boost Accumulator
-#include <boost/accumulators/accumulators.hpp>
-#include <boost/accumulators/statistics/stats.hpp>
-#include <boost/accumulators/statistics/min.hpp>
-#include <boost/accumulators/statistics/max.hpp>
-#include <boost/accumulators/statistics/mean.hpp>
-#include <boost/accumulators/statistics/median.hpp>
-#include <boost/accumulators/statistics/variance.hpp>
-
-// Boost Assert
-#include <boost/assert.hpp>
-
-// Boost Format
-#include <boost/format.hpp>
-
 // Boost Program Options
 #include <boost/program_options.hpp>
 
@@ -29,36 +14,16 @@
 
 #include "simulation_system.h"
 #include "q_matrix_tools.h"
+#include "rhab/statistics.h"
 
 
-using namespace rhab;
+//using namespace rhab;
 
-struct StepStatistics {
-	size_t step;
-	boost::accumulators::accumulator_set<
-		double,
-		boost::accumulators::stats<
-			boost::accumulators::tag::min,
-			boost::accumulators::tag::max,
-			boost::accumulators::tag::mean,
-			boost::accumulators::tag::variance,
-			boost::accumulators::tag::median
-				> > err1;
-	boost::accumulators::accumulator_set<
-		double,
-		boost::accumulators::stats<
-			boost::accumulators::tag::min,
-			boost::accumulators::tag::max,
-			boost::accumulators::tag::mean,
-			boost::accumulators::tag::variance,
-			boost::accumulators::tag::median
-				> > err2;
-};
 
 class IsingSystem : public SimulationSystem {
 private:
 	typedef boost::numeric::ublas::matrix<signed char> storage_t;
-	typedef std::vector< StepStatistics > error_acc_t;
+	typedef std::vector< rhab::StepStatistics > error_acc_t;
 
 	// size L of one dimension of the lattice
 	size_t size;
@@ -100,9 +65,8 @@ private:
 
 	template<class Sampler>
 	void mc_loop() {
-		
 		for (size_t run = 0; run < runs; run++) {
-			std::cout << run << std::endl;
+			std::cout << "run: " << run << std::endl;
 			// variables for error / statistics calculation
 			size_t error_check_freq = error_check_f;
 			size_t index = 0;
@@ -152,15 +116,23 @@ private:
 					energy += dE;
 				}
 				if (step % error_check_freq == 0) {
-					// calculate_statistics()
 					error_acc[index].step = step;
-					Qd = normalize_q(Q);
 
-					double err = calculate_error_q(dos_exact_norm, Qd);
-					error_acc[index].err1(err);
+					double err_lq, err_gth, err_power;
+					bool   suc_lq, suc_gth, suc_power;
+					boost::tie(err_lq, err_gth, err_power, suc_lq, suc_gth, suc_power) = rhab::calculate_error_q(dos_exact_norm, Q, Qd);
+					if (suc_lq) {
+						error_acc[index].err1(err_lq);
+					}
+					if (suc_gth) {
+						error_acc[index].err2(err_gth);
+					}
+					if (suc_power) {
+						error_acc[index].err3(err_power);
+					}
 					if (sampler.has_own_statistics()) {
-						err = sampler.calculate_error(dos_exact_norm);
-						error_acc[index].err2(err);
+						double err = sampler.calculate_error(dos_exact_norm);
+						error_acc[index].err4(err);
 					}
 
 					index++;

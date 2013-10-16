@@ -134,7 +134,7 @@ po::options_description IsingSystem::get_program_options() {
 
 void IsingSystem::setup(settings_t s) {
 	SimulationSystem::setup(s);
-	
+
 	try {
 		sampler       = boost::any_cast<size_t>(settings["sampler"]);
 	} catch(const boost::bad_any_cast &e) {
@@ -174,27 +174,54 @@ bool IsingSystem::run() {
 		return false;
 	}
 
-	out << "#\n#          time     mean_error      var_error   mean_error_s    var_error_s       qm_error\n";
+	char line[3000];
+	snprintf(line, 3000, "#\n#%14i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i\n", 1,
+			2,  3,  4,  5,  6,  7,
+			8,  9,  10, 11, 12, 13,
+			14, 15, 16, 17, 18, 19,
+			20, 21, 22, 23, 24, 25);
+	out << line;
+	snprintf(line, 3000, "#%14s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s\n", "time",
+			"mean_lq",    "var_lq",    "cnt_lq",    "median_lq",    "min_lq",    "max_lq",
+			"mean_gth",   "var_gth",   "cnt_gth",   "median_gth",   "min_gth",   "max_gth",
+			"mean_power", "var_power", "cnt_power", "median_power", "min_power", "max_power",
+			"mean_other", "var_other", "cnt_other", "median_other", "min_other", "max_other"
+			);
+	out << line;
 	for (size_t i = 0; i < error_acc.size(); i++) {
 		size_t time  = error_acc[i].step;
-		double mean  = boost::accumulators::mean(error_acc[i].err1);
-		double var   = boost::accumulators::variance(error_acc[i].err1);
-		double mean2 = boost::accumulators::mean(error_acc[i].err2);
-		double var2  = boost::accumulators::variance(error_acc[i].err2);
+		double mean_lq    = boost::accumulators::mean(error_acc[i].err1);
+		double mean_gth   = boost::accumulators::mean(error_acc[i].err2);
+		double mean_power = boost::accumulators::mean(error_acc[i].err3);
+		double mean_other = boost::accumulators::mean(error_acc[i].err4);
+		double var_lq     = boost::accumulators::variance(error_acc[i].err1);
+		double var_gth    = boost::accumulators::variance(error_acc[i].err2);
+		double var_power  = boost::accumulators::variance(error_acc[i].err3);
+		double var_other  = boost::accumulators::variance(error_acc[i].err4);
+		size_t cnt_lq     = boost::accumulators::count(error_acc[i].err1);
+		size_t cnt_gth    = boost::accumulators::count(error_acc[i].err2);
+		size_t cnt_power  = boost::accumulators::count(error_acc[i].err3);
+		size_t cnt_other  = boost::accumulators::count(error_acc[i].err4);
+		double mdn_lq     = boost::accumulators::median(error_acc[i].err1);
+		double mdn_gth    = boost::accumulators::median(error_acc[i].err2);
+		double mdn_power  = boost::accumulators::median(error_acc[i].err3);
+		double mdn_other  = boost::accumulators::median(error_acc[i].err4);
+		double min_lq     = boost::accumulators::min(error_acc[i].err1);
+		double min_gth    = boost::accumulators::min(error_acc[i].err2);
+		double min_power  = boost::accumulators::min(error_acc[i].err3);
+		double min_other  = boost::accumulators::min(error_acc[i].err4);
+		double max_lq     = boost::accumulators::max(error_acc[i].err1);
+		double max_gth    = boost::accumulators::max(error_acc[i].err2);
+		double max_power  = boost::accumulators::max(error_acc[i].err3);
+		double max_other  = boost::accumulators::max(error_acc[i].err4);
 		//double qm_err   = error_acc[i].get<5>() / runs;
-		out << std::setw(15) << std::right
-			<< time
-			<< std::setw(15) << std::right
-			<< mean
-			<< std::setw(15) << std::right
-			<< var
-			<< std::setw(15) << std::right
-			<< mean2
-			<< std::setw(15) << std::right
-			<< var2
-			//<< std::setw(15) << std::right
-			//<< qm_err
-			<< "\n";
+		snprintf(line, 3000, "%15lu%15g%15g%15lu%15g%15g%15g%15g%15g%15lu%15g%15g%15g%15g%15g%15lu%15g%15g%15g%15g%15g%15lu%15g%15g%15g\n", time,
+				mean_lq,    var_lq,    cnt_lq,    mdn_lq,    min_lq,    max_lq,
+				mean_gth,   var_gth,   cnt_gth,   mdn_gth,   min_gth,   max_gth,
+				mean_power, var_power, cnt_power, mdn_power, min_power, max_power,
+				mean_other, var_other, cnt_other, mdn_other, min_other, max_other
+				);
+		out << line;
 
 	}
 	return true;
