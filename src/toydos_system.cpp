@@ -45,22 +45,23 @@ void ToyDosSystem::setup_output() {
 	std::string format;
 	switch (sampler) {
 		case 1:
-			format = "toydos_%1%_%2%S_%3%R_%4%M_%6$0.2ff%7%%8%.out";
+			format = "toydos_%1%_%2%S_%3%R_%4%M_%5%C_%7$0.2ff%8%%9%.out";
 			break;
 		case 2:
 		case 3:
 		case 4:
-			format = "toydos_%1%_%2%S_%3%R_%4%M%7%%8%.out";
+			format = "toydos_%1%_%2%S_%3%R_%4%M_%5%C%8%%9%.out";
 			break;
 		case 0:
 		default:
-			format = "toydos_%1%_%2%S_%3%R_%4%M_%5$0.2fT%7%%8%.out";
+			format = "toydos_%1%_%2%S_%3%R_%4%M_%5%C_%6$0.2fT%8%%9%.out";
 	}
 	std::string buf = str( boost::format(format)
 			% sampler_string[sampler]
 			% steps
 			% runs
 			% n_bins
+			% connections
 			% boost::any_cast<double>(settings["temperature"])
 			% boost::any_cast<double>(settings["flatness"])
 			% (tag.size() > 0 ? "_" : "")
