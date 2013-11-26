@@ -47,7 +47,7 @@ void Simulation::parse_arguments(int argc, char *argv[]) {
 		) (
 			"sampler",
 			po::value<size_t>()->default_value(1),
-			"Sampler to use:\n0 – Boltzmann, 1 – Wang-Landau, 2 – Q-Matrix B, 3 – Q-Matrix A"
+			"Sampler to use:\n0 – Boltzmann, 1 – Wang-Landau, 2 – Q-Matrix B, 3 – Q-Matrix A, 4 – TransitionMatrix"
 		) (
 			"flatness,f",
 			po::value<double>()->default_value(0.99),

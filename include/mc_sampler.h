@@ -294,31 +294,41 @@ public:
 class TransitionMatrixSampler : public MCSampler {
 private:
 	const matrix_int_t& Q;
-	vector_int_t column_sum;
+	boost::numeric::ublas::vector<int64_t> colsum;
 public:
 	TransitionMatrixSampler(boost::mt19937 &rng, const matrix_int_t& qmat, const settings_t &settings)
-		: MCSampler(rng, settings), Q(qmat), column_sum(qmat.size1(),0) {
+		: MCSampler(rng, settings), Q(qmat), colsum(qmat.size1()) {
+		colsum *= 0;
 	}
-	bool operator()(const int &E_old, const int &E_new) {
-		column_sum[E_old]++;
-#ifndef NDEBUG
-		//int Hold_sum(0), Hnew_sum(0);
-		//for (size_t i = 0; i < Q.size1(); i++) {
-			//Hold_sum += Q(E_old,i);
-			//Hnew_sum += Q(E_new,i);
-		//}
-		//assert(column_sum[E_old]==Hold_sum);
-		//assert(column_sum[E_new]==Hnew_sum);
-#endif
-		if (column_sum[E_new] == 0 || column_sum[E_old] == 0) {
+
+	template<class T1, class T2>
+	bool operator()(const T1 &dE, const T2 &i_old, const T2 &i_new) {
+		colsum[i_old]++;
+
+		if (colsum[i_new] == 0 || colsum[i_old] == 0) {
 			return true;
 		}
-		double Tji, Tij;
-		Tji = (double)Q(E_new, E_old) / column_sum[E_new];
-		Tij = (double)Q(E_old, E_new) / column_sum[E_old];
+
+		double Tji = (double)Q(i_new, i_old) / colsum[i_new];
+		double Tij = (double)Q(i_old, i_new) / colsum[i_old];
+
 		bool res = ((Tji >= Tij) || (dist01(rng) <= (Tji / Tij)));
-		//std::cout << __LINE__ << " " << res << " " << Tji << " " << Tij << std::endl;
+#if VERBOSE == 1
+		int64_t Hold_sum(0), Hnew_sum(0);
+		for (size_t i = 0; i < Q.size1(); i++) {
+			Hold_sum += Q(i_old,i);
+			Hnew_sum += Q(i_new,i);
+		}
+		assert(Hold_sum == colsum[i_old]);
+		assert(Hnew_sum == colsum[i_new]);
+		std::cout << i_old << " " << i_new << " " << Hold_sum << " " << Hnew_sum << " " << colsum[i_old] << " " << colsum[i_new] << " " << res << std::endl;
+#endif
 		return res;
+	}
+
+	template<class T2>
+	void rejected(const T2 &i_old) {
+		colsum[i_old]++;
 	}
 
 	void check(const size_t &step, const size_t &run) {}

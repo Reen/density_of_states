@@ -291,6 +291,9 @@ bool ToyDosSystem::run() {
 	case 3:
 		mc_loop<QualityMeasureASampler>();
 		break;
+	case 4:
+		mc_loop<TransitionMatrixSampler>();
+		break;
 	default:
 		std::cerr << "Error: unknown sampler" << std::endl;
 		return false;
