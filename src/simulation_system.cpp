@@ -1,6 +1,6 @@
 #include "simulation_system.h"
 
-SimulationSystem::SimulationSystem(settings_t &s) : settings(s) {};
+SimulationSystem::SimulationSystem(settings_t &s) : settings(s) {}
 
 
 void SimulationSystem::setup() {
