@@ -202,23 +202,35 @@ public:
 class QualityMeasureASampler : public MCSampler {
 private:
 	const matrix_int_t& Q;
+	boost::numeric::ublas::vector<int64_t> colsum;
 public:
 	QualityMeasureASampler(boost::mt19937 &rng, const matrix_int_t& qmat, const settings_t &settings)
-		: MCSampler(rng, settings), Q(qmat) {
+		: MCSampler(rng, settings), Q(qmat), colsum(qmat.size1()) {
+		colsum *= 0;
 	}
 
 	template<class T1, class T2>
 	bool operator()(const T1 &dE, const T2 &i_old, const T2 &i_new) {
-		size_t Hold_sum(0), Hnew_sum(0);
+		colsum[i_old]++;
+
+		bool res = ((colsum[i_old] >= colsum[i_new]) || (dist01(rng) <= exp(colsum[i_old] - colsum[i_new])));
+
+#if VERBOSE == 1
+		int64_t Hold_sum(0), Hnew_sum(0);
 		for (size_t i = 0; i < Q.size1(); i++) {
 			Hold_sum += Q(i_old,i);
 			Hnew_sum += Q(i_new,i);
 		}
-		bool res = ((Hold_sum >= Hnew_sum) || (dist01(rng) <= exp(Hold_sum-Hnew_sum)));
-#if VERBOSE == 1
-		//std::cout << i_old << " " << i_new << " " << Hold << " " << Hnew << " " << res << std::endl;
+		assert(Hold_sum == colsum[i_old]);
+		assert(Hnew_sum == colsum[i_new]);
+		std::cout << i_old << " " << i_new << " " << Hold_sum << " " << Hnew_sum << " " << colsum[i_old] << " " << colsum[i_new] << " " << res << std::endl;
 #endif
 		return res;
+	}
+
+	template<class T2>
+	void rejected(const T2 &i_old) {
+		colsum[i_old]++;
 	}
 
 	void check(const size_t &step, const size_t &run) {}
@@ -241,7 +253,7 @@ public:
 
 	template<class T1, class T2>
 	bool operator()(const T1 &dE, const T2 &i_old, const T2 &i_new) {
-		size_t Hold_sum(0), Hnew_sum(0), Hold_cnt(0), Hnew_cnt(0);
+		int64_t Hold_sum(0), Hnew_sum(0), Hold_cnt(0), Hnew_cnt(0);
 		for (size_t i = 0; i < Q.size1(); i++) {
 			if (Q(i_old,i) != 0) {
 				Hold_sum += Q(i_old,i);
