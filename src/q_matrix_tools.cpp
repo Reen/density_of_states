@@ -54,12 +54,11 @@ bool rhab::calculate_dos_leastsquares(matrix_int_t imat, matrix_double_t &dmat, 
 	vector_double_t measurements(xn);
 
 	gsl_matrix *X, *cov;
-	gsl_vector *y, *w, *c;
+	gsl_vector *y, *c;
 	double chisq;
 
 	X = gsl_matrix_calloc(xn, dos.size());
 	y = gsl_vector_calloc(xn);
-	//w = gsl_vector_alloc(xn);
 	c = gsl_vector_calloc(dos.size());
 	cov = gsl_matrix_calloc(dos.size(), dos.size());
 
