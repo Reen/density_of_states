@@ -115,16 +115,11 @@ bool rhab::calculate_dos_gth(matrix_double_t & inner_mat, vector_double_t &dos) 
 	namespace ublas = boost::numeric::ublas;
 	std::size_t inner_rows(inner_mat.size1());
 	std::size_t inner_cols(inner_mat.size1());
-	//vector_double_t dos(inner_mat.size1());
 	// we assume small matrix and try GTH method
 	// do GTH LU decomposition
-	//int first_nonzero_row = -1;
 	for (std::size_t i = inner_rows-1; i > 0; --i) {
 		double s = ublas::norm_1(ublas::subrange(ublas::row(inner_mat,i), 0, i));
 		if (s != 0) {
-			//if (first_nonzero_row < 0) {
-				//first_nonzero_row = i;
-			//}
 			inner_mat(i,i) = -s;
 			for (std::size_t j = 0; j < i; ++j) {
 				inner_mat(j,i) /= s;
@@ -231,7 +226,7 @@ double rhab::calculate_error(const vector_double_t &exact, const vector_double_t
 		//std::cout << std::setprecision(22) << norm << " " << sum << " " << dos << " " << norm << std::endl;
 	} else {
 		for (; i1 != dos.end(); i1++, i2++) {
-			// Be careful here and do not devide by 0
+			// Be careful here and do not divide by 0
 			if ((*i2) > 0) {
 				sum += fabs((*i1 - *i2) / (*i2));
 			}
