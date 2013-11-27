@@ -5,6 +5,8 @@ set (dostoy_VERSION_MAJOR 1 )
 set (dostoy_VERSION_MINOR 0 )
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake-modules/")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake-additional-modules/")
+
 include(GetGitRevisionDescription)
 get_git_head_revision(GIT_REFSPEC GIT_SHA1)
 
@@ -39,8 +41,7 @@ if( NOT Boost_FOUND )
 	message( fatal_error "Cannot build without boost. Please install the boost library first." )
 endif( NOT Boost_FOUND )
 
-#set(BLA_VENDOR ATLAS)
-#find_package(BLAS REQUIRED)
+find_package ( GSL REQUIRED )
 
 include_directories( ${Boost_INCLUDE_DIRS} )
 
@@ -55,7 +56,7 @@ set_property(TARGET dos PROPERTY RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}")
 
 # TARGET: ising ###############
 add_executable( ising ising.cpp simulation.cpp simulation_rng.cpp q_matrix_tools.cpp ising_system.cpp simulation_system.cpp toydos_system.cpp ${SOURCES_GENERAL} )
-target_link_libraries( ising ${Boost_LIBRARIES} -lgsl -L/usr/lib64/atlas-sse3 -llapack -lblas -latlas)
+target_link_libraries( ising ${Boost_LIBRARIES} ${GSL_LIBRARIES})
 
 set_property(TARGET ising PROPERTY OUTPUT_NAME_DEBUG "ising_debug")
 set_property(TARGET ising PROPERTY DEBUG_OUTPUT_NAME "ising_debug")
