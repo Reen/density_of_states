@@ -157,7 +157,7 @@ bool rhab::calculate_dos_gth(matrix_double_t & inner_mat, vector_double_t &dos) 
 	}
 	//print_dos("gth", dos, 4);
 	normalize(dos);
-	return ( std::count_if(dos.begin(), dos.end(), boost::math::isnan<double>) > 0 );
+	return ( std::count_if(dos.begin(), dos.end(), boost::math::isnan<double>) == 0 );
 }
 
 bool rhab::calculate_dos_power(const matrix_double_t &imat, vector_double_t &t1) {
