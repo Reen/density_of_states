@@ -131,26 +131,30 @@ bool rhab::calculate_dos_gth(matrix_double_t & inner_mat, vector_double_t &dos) 
 			}
 		}
 	}
-	//std::cout << "FNZR: " << first_nonzero_row << std::endl;
-	//if (first_nonzero_row < 0) {
-		//first_nonzero_row = 0;
-	//}
-	// now just do eqn 33 of M. Fenwick - J. Chem. Phys. 125, 144905
+	// now just do modified eqn. 33 of M. Fenwick - J. Chem. Phys. 125, 144905
 	std::fill(dos.begin(), dos.end(), 0.0);//dos.clear();
 	dos[0] = 1;
 	for (std::size_t i = 1; i < inner_rows; ++i) {
-		//std::cout << i << " " << dos.data()[i-1] << ": ";
 		for (std::size_t j = 0; j < i; ++j) {
-			//std::cout << "(" << dos.data()[j] << " " << dos.data()[i-1] << " " << log(inner_mat(j,i)) << ") ";
-			dos[i] += exp(dos[j] - dos[i-1] + log(inner_mat(j,i)));
+			if (inner_mat(j,i) > 0) {
+				dos[i] += exp(dos[j] + log(inner_mat(j,i)));
+			}
 		}
-		//std::cout << ": "<< dos.data()[i] << "\n";
-		dos[i] = dos[i-1] + log(dos[i]);
+		dos[i] = log(dos[i]);
 	}
 	for (std::size_t ei = 0; ei < inner_cols; ++ei) {
-		dos(ei) = exp(dos(ei)-5);
+		dos(ei) = exp(dos(ei));
 	}
-	//print_dos("gth", dos, 4);
+
+	// eqn. 32 of M. Fenwick - J. Chem. Phys. 125, 144905
+	/*
+	for (size_t i = 1; i < inner_rows; ++i) {
+		for (size_t j = 0; j < i; ++j) {
+			dos[i] += dos[j] * inner_mat(j,i);
+		}
+	}
+	*/
+
 	normalize(dos);
 	return ( std::count_if(dos.begin(), dos.end(), boost::math::isnan<double>) == 0 );
 }
