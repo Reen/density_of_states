@@ -10,8 +10,8 @@
 // Boost Format
 #include <boost/format.hpp>
 
-
 namespace po = boost::program_options;
+
 
 /**
  * Private Methods:
