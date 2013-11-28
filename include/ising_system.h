@@ -61,7 +61,6 @@ private:
 	template<class Sampler>
 	void mc_loop() {
 		for (size_t run = 0; run < runs; run++) {
-			std::cout << "run: " << run << std::endl;
 			// variables for error / statistics calculation
 			size_t error_check_freq = error_check_f;
 			size_t index = 0;
