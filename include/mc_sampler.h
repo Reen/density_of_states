@@ -37,67 +37,29 @@ public:
 
 
 /**
- * BoltzmannFunctor
- */
-class BoltzmannFunctor {
-	const double &kB;
-	const double &T;
-
-public:
-	BoltzmannFunctor(const double &_kB, const double &_T)
-		: kB(_kB), T(_T) {}
-
-	template<class FloatType>
-	inline double operator()(const FloatType &dE) {
-		return exp(dE);
-	}
-};
-
-/**
- * BoltzmannTableFunctor
- */
-class BoltzmannTableFunctor {
-	const double &kB;
-	const double &T;
-	double table[9];
-
-public:
-	BoltzmannTableFunctor(const double &_kB, const double &_T)
-		: kB(_kB), T(_T) {
-		table[4] = exp(-4/(kB*T));
-		table[8] = exp(-8/(kB*T));
-	}
-
-	inline double operator()(const int &dE) {
-		BOOST_ASSERT((dE == 4) || (dE == 8));
-		return table[dE];
-	}
-};
-
-/**
  * BoltzmannSampler
  */
-template<class expfn_t>
 class BoltzmannSampler : public MCSampler {
 private:
 	double kB;
 	double T;
-	expfn_t exp_fn;
+	double beta;
 public:
 	BoltzmannSampler(boost::mt19937 &rng, const matrix_int_t&, const settings_t &settings)
-		: MCSampler(rng, settings), exp_fn(kB, T) {
+		: MCSampler(rng, settings) {
 		kB = boost::any_cast<double>(settings.find("kB")->second);
 		T  = boost::any_cast<double>(settings.find("temperature")->second);
+		beta = -1./(kB * T);
 	}
 
 	template<class T1>
 	bool operator()(const T1 &dE) {
-		return ((dE <= 0) || (dist01(rng) <= exp_fn(dE)));
+		return ((dE <= 0) || (dist01(rng) <= exp(beta * dE)));
 	}
 
 	template<class T1, class T2>
 	bool operator()(const T1 &dE, const T2 &i_old, const T2 &i_new) {
-		return ((dE <= 0) || (dist01(rng) <= exp_fn(dE)));
+		return ((dE <= 0) || (dist01(rng) <= exp(beta * dE)));
 	}
 
 	void check(const size_t & step, const size_t &run) {

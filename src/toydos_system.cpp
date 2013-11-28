@@ -280,7 +280,7 @@ void ToyDosSystem::setup() {
 bool ToyDosSystem::run() {
 	switch (sampler) {
 	case 0:
-		mc_loop<BoltzmannSampler<BoltzmannTableFunctor> >();
+		mc_loop<BoltzmannSampler>();
 		break;
 	case 1:
 		mc_loop<WangLandauSampler>();

@@ -160,7 +160,7 @@ void IsingSystem::setup() {
 bool IsingSystem::run() {
 	switch (sampler) {
 	case 0:
-		mc_loop<BoltzmannSampler<BoltzmannTableFunctor> >();
+		mc_loop<BoltzmannSampler>();
 		break;
 	case 1:
 		mc_loop<WangLandauSampler>();
