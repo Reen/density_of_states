@@ -14,7 +14,6 @@
 
 #include "simulation_system.h"
 #include "q_matrix_tools.h"
-#include "rhab/statistics.h"
 
 
 //using namespace rhab;
@@ -23,7 +22,6 @@
 class IsingSystem : public SimulationSystem {
 private:
 	typedef boost::numeric::ublas::matrix<signed char> storage_t;
-	typedef std::vector< rhab::StepStatistics > error_acc_t;
 
 	// size L of one dimension of the lattice
 	size_t size;
@@ -45,9 +43,6 @@ private:
 	 * Misc
 	 */
 	boost::uniform_01<> dist01;
-
-	// error accumulator array
-	error_acc_t error_acc;
 
 	// exact dos
 	vector_double_t dos_exact_norm;

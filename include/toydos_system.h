@@ -7,12 +7,10 @@
 
 #include "simulation_system.h"
 #include "q_matrix_tools.h"
-#include "rhab/statistics.h"
 
 class ToyDosSystem : public SimulationSystem {
 private:
 	typedef boost::numeric::ublas::matrix<signed char> storage_t;
-	typedef std::vector< rhab::StepStatistics > error_acc_t;
 
 	/**
 	 * Settings
@@ -67,9 +65,6 @@ private:
 	 * Misc
 	 */
 	boost::uniform_01<> dist01;
-
-	// error accumulator array
-	error_acc_t error_acc;
 
 	// size dependent constants:
 	int e_min;

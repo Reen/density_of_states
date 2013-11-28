@@ -20,8 +20,7 @@ struct StepStatistics {
 			boost::accumulators::tag::min,
 			boost::accumulators::tag::max,
 			boost::accumulators::tag::mean,
-			boost::accumulators::tag::variance,
-			boost::accumulators::tag::median
+			boost::accumulators::tag::variance
 				> > err1;
 	boost::accumulators::accumulator_set<
 		double,
@@ -29,8 +28,7 @@ struct StepStatistics {
 			boost::accumulators::tag::min,
 			boost::accumulators::tag::max,
 			boost::accumulators::tag::mean,
-			boost::accumulators::tag::variance,
-			boost::accumulators::tag::median
+			boost::accumulators::tag::variance
 				> > err2;
 	boost::accumulators::accumulator_set<
 		double,
@@ -38,8 +36,7 @@ struct StepStatistics {
 			boost::accumulators::tag::min,
 			boost::accumulators::tag::max,
 			boost::accumulators::tag::mean,
-			boost::accumulators::tag::variance,
-			boost::accumulators::tag::median
+			boost::accumulators::tag::variance
 				> > err3;
 	boost::accumulators::accumulator_set<
 		double,
@@ -47,8 +44,7 @@ struct StepStatistics {
 			boost::accumulators::tag::min,
 			boost::accumulators::tag::max,
 			boost::accumulators::tag::mean,
-			boost::accumulators::tag::variance,
-			boost::accumulators::tag::median
+			boost::accumulators::tag::variance
 				> > err4;
 };
 

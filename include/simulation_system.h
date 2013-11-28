@@ -10,9 +10,13 @@
 
 #include "simulation_rng.h"
 #include "typedefs.h"
+#include "rhab/statistics.h"
 
 class SimulationSystem {
 protected:
+	// type of error accumulator array
+	typedef std::vector< rhab::StepStatistics > error_acc_t;
+
 	settings_t &settings;
 	size_t steps;
 	size_t runs;
@@ -26,6 +30,9 @@ protected:
 	// normalized transition matrix
 	matrix_double_t Qd;
 
+	// error accumulator array
+	error_acc_t error_acc;
+
 	virtual void setup_output() = 0;
 
 public:
@@ -35,6 +42,7 @@ public:
 	virtual void parse_arguments(boost::program_options::variables_map &vm) = 0;
 	virtual bool run() = 0;
 	virtual void setup();
+	virtual void write_output();
 
 	SimulationRNG rng;
 
