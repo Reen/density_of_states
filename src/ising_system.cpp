@@ -143,7 +143,7 @@ po::options_description IsingSystem::get_program_options() {
 	return desc;
 }
 
-void IsingSystem::parse_arguments(boost::program_options::variables_map &vm) {}
+void IsingSystem::parse_arguments(boost::program_options::variables_map &) {}
 
 void IsingSystem::setup() {
 	SimulationSystem::setup();
