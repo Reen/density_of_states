@@ -72,15 +72,20 @@ void ToyDosSystem::setup_output() {
 		throw std::runtime_error("Error: could not open output file");
 	}
 
+	write_header();
+
+	out << "#";
+	out << "\n# sampler:     " << sampler << " - " << sampler_string[sampler];
+	out << "\n# steps:       " << steps;
+	out << "\n# runs:        " << runs;
+	out << "\n# n_bins:      " << n_bins;
+	out << "\n# connections: " << connections;
+	out << "\n# temperature: " << boost::any_cast<double>(settings["temperature"]);
+	out << "\n# flatness:    " << boost::any_cast<double>(settings["flatness"]);
+	out << "\n#" << std::endl;
 }
 
 void ToyDosSystem::setup_variables() {
-	//out << "# Toy Dos Version: "
-		//<< VERSION_MAJOR << "."
-		//<< VERSION_MINOR << "-"
-		//<< g_GIT_SHA1 << '\n';
-	//out << "# seed: " << seed << '\n';
-
 	// calculate an exact density of states
 	dos_exact = get_exact_dos(macrostates);
 	num_config = sum(dos_exact);

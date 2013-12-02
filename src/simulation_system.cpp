@@ -1,4 +1,6 @@
 #include "simulation_system.h"
+#include "config.h"
+#include "GitSHA1.h"
 
 SimulationSystem::SimulationSystem(settings_t &s) : settings(s) {}
 
@@ -29,6 +31,13 @@ void SimulationSystem::setup() {
 		std::cerr << "Error: check-frequency and number of steps don't match" << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
+}
+
+void SimulationSystem::write_header() {
+	out << "# Version: " << VERSION_MAJOR << "." << VERSION_MINOR << std::endl;
+	out << "# git SHA: " << g_GIT_SHA1 << std::endl;
+	out << "# cmdline: " << boost::any_cast<std::string>(settings["cmdline"]) << std::endl;
+	out << "# seed: "    << boost::any_cast<size_t>(settings["seed"]) << std::endl;
 }
 
 void SimulationSystem::write_output() {

@@ -34,6 +34,7 @@ protected:
 	error_acc_t error_acc;
 
 	virtual void setup_output() = 0;
+	virtual void write_header();
 
 public:
 	SimulationSystem(settings_t &s);
