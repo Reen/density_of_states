@@ -15,7 +15,7 @@ namespace po = boost::program_options;
 void Simulation::parse_arguments(int argc, char *argv[]) {
 	// rebuild the command line for documentation
 	std::string cmdline = "";
-	for (size_t i = 0; i < argc; ++i)
+	for (int i = 0; i < argc; ++i)
 	{
 		cmdline += " ";
 		cmdline += argv[i];
