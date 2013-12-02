@@ -8,8 +8,9 @@ void SimulationSystem::setup() {
 		rng.seed = boost::any_cast<size_t>(settings["seed"]);
 		rng.seed_set = true;
 	} else {
-		rng.initialize();
-	}	
+		size_t seed = rng.initialize();
+		settings["seed"] = seed;
+	}
 
 	try {
 		runs          = boost::any_cast<size_t>(settings["runs"]);

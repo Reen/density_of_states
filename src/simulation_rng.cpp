@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 
-void SimulationRNG::initialize() {
+size_t SimulationRNG::initialize() {
 	if (!seed_set) {
 		FILE* devran = fopen("/dev/urandom", "rb");
 		size_t read = fread(&seed, sizeof(size_t), 1, devran);
@@ -13,4 +13,5 @@ void SimulationRNG::initialize() {
 	}
 	rng.seed(seed);
 	seed_set = true;
+	return seed;
 }

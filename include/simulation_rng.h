@@ -13,7 +13,7 @@ struct SimulationRNG {
 
 	SimulationRNG()
 		: seed_set(false) {}
-	void initialize();
+	size_t initialize();
 };
 
 #endif /* end of include guard: SIMULATION_RNG_H */
