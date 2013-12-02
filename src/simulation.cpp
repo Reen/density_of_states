@@ -13,6 +13,14 @@ namespace po = boost::program_options;
 
 
 void Simulation::parse_arguments(int argc, char *argv[]) {
+	// rebuild the command line for documentation
+	std::string cmdline = "";
+	for (size_t i = 0; i < argc; ++i)
+	{
+		cmdline += " ";
+		cmdline += argv[i];
+	}
+
 	// parse argc / argv
 	po::options_description all("Allowed options");
 	po::options_description desc("General options");
@@ -98,6 +106,7 @@ void Simulation::parse_arguments(int argc, char *argv[]) {
 	settings["error_check_f"] = vm["error-check-freq"].as<size_t>();
 	settings["tag"]           = vm["tag"].as<std::string>();
 	settings["sampler"]       = vm["sampler"].as<size_t>();
+	settings["cmdline"]       = cmdline;
 
 }
 
