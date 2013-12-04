@@ -180,7 +180,7 @@ bool rhab::calculate_dos_power(const matrix_double_t &imat, vector_double_t &t1)
 		t1 /= ublas::norm_1(t1);
 	} while(!iter.converged(t2.begin(), t2.end(), t1.begin(), dist));
 
-	return true;
+	return ( std::count_if(t2.begin(), t2.end(), boost::math::isnan<double>) == 0 );
 }
 
 
