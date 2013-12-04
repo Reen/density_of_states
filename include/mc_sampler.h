@@ -9,6 +9,7 @@
 #include <boost/random/uniform_01.hpp>
 
 #include "typedefs.h"
+#include "q_matrix_tools.h"
 
 /**
  * MCSampler
@@ -23,11 +24,13 @@ public:
 	MCSampler(boost::mt19937 &_rng, const settings_t &_settings)
 		: rng(_rng), settings(_settings) {}
 
-	void check(const size_t & step, const size_t &run) {}
+	void check(const size_t & /*step*/, const size_t & /*run*/) {}
+
 	bool has_own_statistics() {
 		return false;
 	}
-	double calculate_error(const vector_double_t &exact) {
+
+	double calculate_error(const vector_double_t & /*exact*/) {
 		return 0.0;
 	}
 
@@ -58,11 +61,11 @@ public:
 	}
 
 	template<class T1, class T2>
-	bool operator()(const T1 &dE, const T2 &i_old, const T2 &i_new) {
+	bool operator()(const T1 &dE, const T2 & /*i_old*/, const T2 & /*i_new*/) {
 		return ((dE <= 0) || (dist01(rng) <= exp(beta * dE)));
 	}
 
-	void check(const size_t & step, const size_t &run) {
+	void check(const size_t & step, const size_t & /*run*/) {
 		//T = 2 - (1.9 * step/1e7);
 		//T = sin(step/2e5)+1.1;
 	}
@@ -72,7 +75,7 @@ public:
  * WangLandauSampler
  */
 class WangLandauSampler : public MCSampler {
-private:
+protected:
 	vector_int_t H;
 	vector_double_t g;
 	double ln_f;
@@ -99,7 +102,7 @@ public:
 	}
 
 	template<class T1, class T2>
-	bool operator()(const T1 &dE, const T2 &i_old, const T2 &i_new) {
+	bool operator()(const T1 & /*dE*/, const T2 &i_old, const T2 &i_new) {
 		bool res = ((g[i_old] >= g[i_new]) || (dist01(rng) <= exp(g[i_old]-g[i_new])));
 
 		if (res) {
@@ -118,7 +121,7 @@ public:
 		g[i_old]+=ln_f;
 	}
 
-	void check(const size_t & step, const size_t &run) {
+	void check(const size_t & step, const size_t & /*run*/) {
 		if ((step-last_checked) < 10*H.size() || (step-last_refinement_step) < 10*H.size()) {
 			return;
 		}
@@ -163,16 +166,15 @@ public:
  */
 class QualityMeasureASampler : public MCSampler {
 private:
-	const matrix_int_t& Q;
 	boost::numeric::ublas::vector<int64_t> colsum;
 public:
 	QualityMeasureASampler(boost::mt19937 &rng, const matrix_int_t& qmat, const settings_t &settings)
-		: MCSampler(rng, settings), Q(qmat), colsum(qmat.size1()) {
+		: MCSampler(rng, settings), colsum(qmat.size1()) {
 		colsum *= 0;
 	}
 
 	template<class T1, class T2>
-	bool operator()(const T1 &dE, const T2 &i_old, const T2 &i_new) {
+	bool operator()(const T1 & /*dE*/, const T2 &i_old, const T2 &i_new) {
 		colsum[i_old]++;
 
 		bool res = ((colsum[i_old] >= colsum[i_new]) || (dist01(rng) <= exp(colsum[i_old] - colsum[i_new])));
@@ -195,7 +197,7 @@ public:
 		colsum[i_old]++;
 	}
 
-	void check(const size_t &step, const size_t &run) {}
+	void check(const size_t & /*step*/, const size_t & /*run*/) {}
 
 	bool has_own_statistics() {
 		return false;
@@ -214,7 +216,7 @@ public:
 	}
 
 	template<class T1, class T2>
-	bool operator()(const T1 &dE, const T2 &i_old, const T2 &i_new) {
+	bool operator()(const T1 & /*dE*/, const T2 &i_old, const T2 &i_new) {
 		int64_t Hold_sum(0), Hnew_sum(0), Hold_cnt(0), Hnew_cnt(0);
 		for (size_t i = 0; i < Q.size1(); i++) {
 			if (Q(i_old,i) != 0) {
@@ -241,7 +243,7 @@ public:
 		return res;
 	}
 
-	void check(const size_t &step, const size_t &run) {}
+	void check(const size_t& /*step*/, const size_t& /*run*/) {}
 
 	bool has_own_statistics() {
 		return false;
@@ -264,7 +266,7 @@ public:
 	}
 
 	template<class T1, class T2>
-	bool operator()(const T1 &dE, const T2 &i_old, const T2 &i_new) {
+	bool operator()(const T1& /*dE*/, const T2 &i_old, const T2 &i_new) {
 		colsum[i_old]++;
 
 		if (colsum[i_new] == 0 || colsum[i_old] == 0) {
@@ -293,7 +295,7 @@ public:
 		colsum[i_old]++;
 	}
 
-	void check(const size_t &step, const size_t &run) {}
+	void check(const size_t& /*step*/, const size_t& /*run*/) {}
 
 	bool has_own_statistics() {
 		return false;
