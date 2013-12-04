@@ -173,7 +173,6 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 #endif
-	std::cout << ::SET_TERMINATE << std::endl;
 
 	Simulation s;
 	return s.exec(argc, argv);

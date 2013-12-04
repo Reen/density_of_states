@@ -125,7 +125,6 @@ private:
 				sampler.check(step, run);
 			}
 			//std::cout << Q << std::endl;
-			rhab::normalize_q(Q, Qd);
 			//std::cout << Qd << std::endl;
 			//vector_double_t dos = calculate_dos_gth(Qd);
 			//final_errors.push_back(calculate_error(dos_exact_norm, dos));
