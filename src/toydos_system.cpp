@@ -27,6 +27,9 @@ void ToyDosSystem::set_size(size_t L) {
 	assert(L==n_bins);
 	Q.resize(n_bins, n_bins);
 	Qd.resize(n_bins, n_bins);
+
+	std::fill(Q.data().begin(), Q.data().end(), 0);
+	std::fill(Qd.data().begin(), Qd.data().end(), 0.0);
 }
 
 void ToyDosSystem::set_gengraph_seed(int) {

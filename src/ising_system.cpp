@@ -26,6 +26,9 @@ void IsingSystem::set_size(size_t L) {
 	n_bins = (e_max - e_min)/4 + 1;
 	Q.resize(n_bins, n_bins);
 	Qd.resize(n_bins, n_bins);
+
+	std::fill(Q.data().begin(), Q.data().end(), 0);
+	std::fill(Qd.data().begin(), Qd.data().end(), 0.0);
 }
 
 int IsingSystem::reset() {

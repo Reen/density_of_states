@@ -93,6 +93,12 @@ bool rhab::calculate_dos_leastsquares(matrix_int_t imat, matrix_double_t &dmat, 
 	for (size_t i = 0; i < dos.size(); i++) {
 		dos[i] = gsl_vector_get(c, i);
 	}
+
+	gsl_matrix_free(X);
+	gsl_vector_free(y);
+	gsl_vector_free(c);
+	gsl_matrix_free(cov);
+
 	return true;
 }
 
