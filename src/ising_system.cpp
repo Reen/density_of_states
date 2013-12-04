@@ -102,10 +102,8 @@ void IsingSystem::setup_output() {
 			% (tag.size() > 0 ? "_" : "")
 			% tag
 		);
-	out.open( buf.c_str() );
-	if (!out.good()) {
-		throw std::runtime_error("Error: could not open output file");
-	}
+
+	open_output_files(buf);
 
 	write_header();
 
@@ -156,9 +154,6 @@ void IsingSystem::setup() {
 			<< e.what() << std::endl;
 		throw e;
 	}
-
-	size_t error_acc_size = 9 * (size_t)log10(steps / error_check_f) + 1;
-	error_acc.resize(error_acc_size);
 
 	// set_size should have been called at this point
 	// and thus n_bins should have a value

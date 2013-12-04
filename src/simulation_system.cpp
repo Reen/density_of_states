@@ -26,11 +26,26 @@ void SimulationSystem::setup() {
 		throw e;
 	}
 
+	size_t error_acc_size = 9 * (size_t)log10(steps / error_check_f) + 1;
+	error_acc.resize(error_acc_size);
+
 	// safety check
 	if (steps % error_check_f != 0) {
 		std::cerr << "Error: check-frequency and number of steps don't match" << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
+}
+
+bool SimulationSystem::open_output_files(const std::string& fn) {
+	open_output_file(out,     fn);
+}
+
+bool SimulationSystem::open_output_file(std::ofstream &o, const std::string & fn) {
+	o.open(fn.c_str());
+	if (!o.good()) {
+		throw std::runtime_error("Error: could not open output file '" + fn + "'");
+	}
+	return true;
 }
 
 void SimulationSystem::write_header() {
