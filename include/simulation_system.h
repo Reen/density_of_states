@@ -20,6 +20,10 @@ protected:
 	settings_t &settings;
 	size_t steps;
 	size_t runs;
+
+	//! Number of bins used for the different matrices and histograms
+	size_t n_bins;
+
 	size_t error_check_f;
 	std::ofstream out;
 	std::string tag;

@@ -50,7 +50,6 @@ private:
 	// size dependent constants:
 	int e_min;
 	int e_max;
-	size_t n_bins;
 
 	void set_size(size_t L);
 
