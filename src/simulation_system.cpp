@@ -1,6 +1,8 @@
 #include "simulation_system.h"
 #include "config.h"
 #include "GitSHA1.h"
+#include <sstream>
+#include <iomanip>
 
 SimulationSystem::SimulationSystem(settings_t &s)
 	: settings(s), error_matrices(&error_per_bin_lsq, &error_per_bin_gth, &error_per_bin_pow) {}
@@ -42,6 +44,9 @@ void SimulationSystem::setup() {
 
 bool SimulationSystem::open_output_files(const std::string& fn) {
 	open_output_file(out,     fn);
+	open_output_file(out_lsq, fn + ".lsq");
+	open_output_file(out_gth, fn + ".gth");
+	open_output_file(out_pow, fn + ".pow");
 }
 
 bool SimulationSystem::open_output_file(std::ofstream &o, const std::string & fn) {
@@ -53,13 +58,43 @@ bool SimulationSystem::open_output_file(std::ofstream &o, const std::string & fn
 }
 
 void SimulationSystem::write_header() {
-	out << "# Version: " << VERSION_MAJOR << "." << VERSION_MINOR << std::endl;
-	out << "# git SHA: " << g_GIT_SHA1 << std::endl;
-	out << "# cmdline: " << boost::any_cast<std::string>(settings["cmdline"]) << std::endl;
-	out << "# seed: "    << boost::any_cast<size_t>(settings["seed"]) << std::endl;
+	std::ostringstream oss;
+	oss << "# Version: " << VERSION_MAJOR << "." << VERSION_MINOR << std::endl;
+	oss << "# git SHA: " << g_GIT_SHA1 << std::endl;
+	oss << "# cmdline: " << boost::any_cast<std::string>(settings["cmdline"]) << std::endl;
+	oss << "# seed: "    << boost::any_cast<size_t>(settings["seed"]) << std::endl;
+
+	out     << oss.str();
+	out_lsq << oss.str();
+	out_gth << oss.str();
+	out_pow << oss.str();
+}
+
+void write_per_bin_error_file(std::ofstream& out, error_mat_t& error_per_bin, const std::string& header) {
+	out << header;
+	for (size_t j = 0; j < error_per_bin.size2(); j++) {
+		//out << "# " << error_acc[i].step << " {";
+		out << std::setw(10) << j;
+		for (size_t i = 0; i < error_per_bin.size1(); i++) {
+			out << std::setw(12) << error_per_bin(i,j).mean();
+			//if (j != error_per_bin.size2()-1) {
+				//out << ", ";
+			//}
+		}
+		out << "\n";
+		//out << "}\n";
+	}
+
 }
 
 void SimulationSystem::write_output() {
+	std::ostringstream oss;
+	oss << "# " << std::setw(8) << "bin";
+	for (size_t i = 0; i < error_acc.size(); i++) {
+		oss << std::setw(12) << (i+1);
+	}
+	oss << "\n";
+	oss << "# " << std::setw(8) << "time->";
 	char line[3000];
 	snprintf(line, 3000, "#\n#%14i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i\n", 1,
 			2,  3,  4,  5,  6,
@@ -104,6 +139,12 @@ void SimulationSystem::write_output() {
 				mean_other, var_other, cnt_other, min_other, max_other
 				);
 		out << line;
-
+		oss << std::setw(12) << time;
 	}
+
+	oss << "\n";
+	write_per_bin_error_file(out_lsq, error_per_bin_lsq, oss.str());
+	write_per_bin_error_file(out_gth, error_per_bin_gth, oss.str());
+	write_per_bin_error_file(out_pow, error_per_bin_pow, oss.str());
+
 }

@@ -26,6 +26,16 @@ protected:
 
 	size_t error_check_f;
 	std::ofstream out;
+
+	//! Output file descriptor for per-bin-errors from Least Squares Method
+	std::ofstream out_lsq;
+
+	//! Output file descriptor for per-bin-errors from GTH Method
+	std::ofstream out_gth;
+
+	//! Output file descriptor for per-bin-errors from Power Method
+	std::ofstream out_pow;
+
 	std::string tag;
 
 	// transition counting matrix
