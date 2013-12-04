@@ -190,5 +190,7 @@ bool IsingSystem::run() {
 
 	write_output();
 
+	out << "# last Q/Qd matrix:\n# " << Q << "\n# " << Qd << std::endl;
+
 	return true;
 }
