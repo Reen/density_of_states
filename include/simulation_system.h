@@ -14,17 +14,25 @@
 
 class SimulationSystem {
 protected:
-	// type of error accumulator array
+	//! type of error accumulator array
 	typedef std::vector< rhab::StepStatistics > error_acc_t;
 
+	//! Map of std::string <-> boost::any
 	settings_t &settings;
+
+	//! Number of steps to perform per run
 	size_t steps;
+
+	//! Number of runs to perform
 	size_t runs;
 
 	//! Number of bins used for the different matrices and histograms
 	size_t n_bins;
 
+	//! Initial error check frequency
 	size_t error_check_f;
+
+	//! Output file descriptor for general output
 	std::ofstream out;
 
 	//! Output file descriptor for per-bin-errors from Least Squares Method
@@ -36,15 +44,16 @@ protected:
 	//! Output file descriptor for per-bin-errors from Power Method
 	std::ofstream out_pow;
 
+	//! Tag to be appended to output file names
 	std::string tag;
 
-	// transition counting matrix
+	//! transition counting matrix
 	matrix_int_t Q;
 
-	// normalized transition matrix
+	//! normalized transition matrix
 	matrix_double_t Qd;
 
-	// error accumulator array
+	//! error accumulator array
 	error_acc_t error_acc;
 
 	//! error accumulator "matrix" to record per-bin-errors from Least Squares Method
