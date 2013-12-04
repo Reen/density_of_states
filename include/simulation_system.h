@@ -37,6 +37,18 @@ protected:
 	// error accumulator array
 	error_acc_t error_acc;
 
+	//! error accumulator "matrix" to record per-bin-errors from Least Squares Method
+	error_mat_t error_per_bin_lsq;
+
+	//! error accumulator "matrix" to record per-bin-errors from GTH Method
+	error_mat_t error_per_bin_gth;
+
+	//! error accumulator "matrix" to record per-bin-errors from Power Method
+	error_mat_t error_per_bin_pow;
+
+	//! Tuple with pointers to error_per_bin_pow, error_per_bin_gth & error_per_bin_lsq
+	error_mat_tuple_t error_matrices;
+
 	virtual void setup_output() = 0;
 	bool open_output_files(const std::string& fn);
 	bool open_output_file(std::ofstream& o, const std::string& fn);

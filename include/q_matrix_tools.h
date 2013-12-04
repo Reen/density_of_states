@@ -42,7 +42,7 @@ namespace rhab {
 	 * calculate_error_q
 	 */
 	boost::tuple<double, double, double, bool, bool, bool>
-	calculate_error_q(const vector_double_t &exact, const matrix_int_t &Q, matrix_double_t &Qd);
+	calculate_error_q(const vector_double_t &exact, const matrix_int_t &Q, matrix_double_t &Qd, error_mat_tuple_t error_matrices, const size_t& index);
 
 	/**
 	 * calculate_error
@@ -50,6 +50,14 @@ namespace rhab {
 	double calculate_error(const vector_double_t &exact,
 			const vector_double_t &dos,
 			bool normalize = false);
+
+/**
+ * calculate_error
+ */
+double calculate_error(const vector_double_t &exact,
+                       const vector_double_t &dos,
+                       error_mat_t* error_per_bin, const size_t& index,
+                       bool normalize = false);
 }
 
 #endif /* end of include guard: Q_MATRIX_TOOLS_H */

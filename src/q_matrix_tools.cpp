@@ -249,27 +249,106 @@ double rhab::calculate_error(const vector_double_t &exact, const vector_double_t
 	return sum;
 }
 
+double rhab::calculate_error(const vector_double_t &exact,
+                             const vector_double_t &dos,
+                             error_mat_t* error_per_bin,
+                             const size_t& index, bool normalize) {
+  if (dos.size() == 0 || exact.size() == 0) {
+      std::cerr << "exact or calculated density of states vector has zero length!" << std::endl;
+      return -1;
+  }
+
+  // vector to calculate the error
+  vector_double_t err(dos.size());
+  std::fill(err.begin(), err.end(), 0.0);
+
+  double sum = 0.0;
+  if (normalize) {
+    /*
+     * Density of states provided in dos is actually \f$\ln(\Omega)\f$.
+     * Find the largest value, then subtract it from dos[i]
+     * and sum exp(dos[i] - max) to calculate the norm.
+     * Then divide the every exp(dos[i] - max) by the norm
+     * and subtract the exact value, i.e. exact[i].
+     * Calculate the absolute value of it and divide by exact[i].
+     *
+     * exact[i] is assumed to be positive
+     */
+    double norm = 0;
+    double max  = *(std::max_element(dos.begin(), dos.end()));
+
+    // calculate the norm
+    for (size_t i = 0; i < dos.size(); i++) {
+      norm += exp(dos[i]-max);
+#ifdef DEBUG
+      if (!boost::math::isfinite(norm) || !boost::math::isfinite(dos[i])) {
+        std::cerr << __FILE__ << ":" << __LINE__ << " "
+                  << norm << " " << dos[i] << std::endl;
+      }
+#endif
+    }
+
+    for (size_t i = 0; i < dos.size(); i++) {
+      // Be careful here and do not devide by 0
+      if ((exact[i]) > 0) {
+        err[i] = fabs( (exp(dos[i]-max)/norm - exact[i]) / exact[i] );
+        sum += err[i];
+      }
+      (*error_per_bin)(index, i)(err[i]);
+#ifdef DEBUG
+      if (!boost::math::isfinite(sum) || !boost::math::isfinite(exact[i])
+          || !boost::math::isfinite(err[i])) {
+        std::cerr << __FILE__ << ":" << __LINE__ << " "
+                  << sum << " " << norm << " "
+                  << dos[i] <<  " " << exact[i] << std::endl;
+      }
+#endif
+    }
+  } else {
+    for (size_t i = 0; i < dos.size(); i++) {
+      // Be careful here and do not divide by 0
+      if (exact[i] > 0) {
+        err[i] = fabs( (dos[i] - exact[i]) / exact[i] );
+        sum += err[i];
+      }
+      (*error_per_bin)(index, i)(err[i]);
+#ifdef DEBUG
+      if (!boost::math::isfinite(sum) || !boost::math::isfinite(dos[i])
+          || !boost::math::isfinite(exact[i])
+          || !boost::math::isfinite(err[i])) {
+        std::cerr << __FILE__ << ":" << __LINE__ << " "
+                  << sum << " " << dos[i] << " " << exact[i] << std::endl;
+      }
+#endif
+    }
+  }
+  return sum;
+}
+
 boost::tuple<double, double, double, bool, bool, bool>
-rhab::calculate_error_q(const vector_double_t &exact, const matrix_int_t &Q, matrix_double_t &Qd) {
+rhab::calculate_error_q(const vector_double_t &exact, const matrix_int_t &Q,
+						matrix_double_t &Qd, error_mat_tuple_t error_matrices,
+						const size_t& index) {
 	vector_double_t dos(Q.size1());
+	std::fill(dos.begin(), dos.end(), 0.0);
 
 	// Least Squares
 	bool lq = calculate_dos_leastsquares(Q, Qd, dos);
-	double error_lq = calculate_error(exact, dos, true);
+	double error_lq = calculate_error(exact, dos, (error_matrices.get<0>()), index, true);
 
 	// Least Squares uses Qd as workspace only, so compute Qd
 	normalize_q(Q, Qd);
 
 	// GTH method
 	bool gth = calculate_dos_gth(Qd, dos);
-	double error_gth = calculate_error(exact, dos, false);
+	double error_gth = calculate_error(exact, dos, (error_matrices.get<1>()), index, false);
 
 	// GTH Method modifies Qd, so recompute
 	normalize_q(Q, Qd);
 
 	// Power method
 	bool power = calculate_dos_power(Qd, dos);
-	double error_power = calculate_error(exact, dos, false);
+	double error_power = calculate_error(exact, dos, (error_matrices.get<2>()), index, false);
 
 	return boost::make_tuple(error_lq, error_gth, error_power, lq, gth, power);
 }

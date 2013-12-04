@@ -2,7 +2,8 @@
 #include "config.h"
 #include "GitSHA1.h"
 
-SimulationSystem::SimulationSystem(settings_t &s) : settings(s) {}
+SimulationSystem::SimulationSystem(settings_t &s)
+	: settings(s), error_matrices(&error_per_bin_lsq, &error_per_bin_gth, &error_per_bin_pow) {}
 
 
 void SimulationSystem::setup() {
@@ -28,6 +29,9 @@ void SimulationSystem::setup() {
 
 	size_t error_acc_size = 9 * (size_t)log10(steps / error_check_f) + 1;
 	error_acc.resize(error_acc_size);
+	error_per_bin_lsq.resize(error_acc_size, n_bins);
+	error_per_bin_gth.resize(error_acc_size, n_bins);
+	error_per_bin_pow.resize(error_acc_size, n_bins);
 
 	// safety check
 	if (steps % error_check_f != 0) {
