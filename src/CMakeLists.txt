@@ -61,3 +61,14 @@ target_link_libraries( ising ${Boost_LIBRARIES} ${GSL_LIBRARIES})
 set_property(TARGET ising PROPERTY OUTPUT_NAME_DEBUG "ising_debug")
 set_property(TARGET ising PROPERTY DEBUG_OUTPUT_NAME "ising_debug")
 set_property(TARGET ising PROPERTY RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}")
+
+# TARGET: doxygen #############
+find_package(Doxygen)
+if(DOXYGEN_FOUND)
+	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
+	add_custom_target(doc
+		${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+		WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src
+		COMMENT "Generating API documentation with Doxygen" VERBATIM
+	)
+endif(DOXYGEN_FOUND)

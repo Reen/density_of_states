@@ -200,7 +200,7 @@ double rhab::calculate_error(const vector_double_t &exact, const vector_double_t
 	double sum = 0.0;
 	if (normalize) {
 		/**
-		 * Density of states provided in dos is actually \ln(\Omega).
+		 * Density of states provided in dos is actually \f$\ln(\Omega)\f$.
 		 * Find the largest value, then subtract it from dos[i]
 		 * and sum exp(dos[i] - max) to calculate the norm.
 		 * Then divide the every exp(dos[i] - max) by the norm
