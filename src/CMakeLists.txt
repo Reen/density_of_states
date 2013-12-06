@@ -45,15 +45,6 @@ find_package ( GSL REQUIRED )
 
 include_directories( ${Boost_INCLUDE_DIRS} )
 
-
-# TARGET: dos #################
-add_executable( dos main.cpp ${SOURCES_GENERAL} )
-target_link_libraries( dos ${Boost_LIBRARIES} )
-
-set_property(TARGET dos PROPERTY OUTPUT_NAME_DEBUG "dos_debug")
-set_property(TARGET dos PROPERTY DEBUG_OUTPUT_NAME "dos_debug")
-set_property(TARGET dos PROPERTY RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}")
-
 # TARGET: ising ###############
 add_executable( ising ising.cpp simulation.cpp simulation_rng.cpp q_matrix_tools.cpp ising_system.cpp simulation_system.cpp toydos_system.cpp ${SOURCES_GENERAL} )
 target_link_libraries( ising ${Boost_LIBRARIES} ${GSL_LIBRARIES})
