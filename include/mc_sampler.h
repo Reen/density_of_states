@@ -155,7 +155,6 @@ public:
 
 	bool has_own_statistics() {
 		return true;
-		//return false;
 	}
 
 	double calculate_error(const vector_double_t &exact) {
