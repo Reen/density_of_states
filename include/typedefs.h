@@ -26,6 +26,11 @@ typedef std::map< std::string, boost::any > settings_t;
 #include "rhab/accumulator.h"
 #include <boost/tuple/tuple.hpp>
 typedef boost::numeric::ublas::matrix<rhab::Accumulator> error_mat_t;
-typedef boost::tuple<error_mat_t*, error_mat_t*, error_mat_t*> error_mat_tuple_t;
+typedef boost::tuple<
+	error_mat_t*,
+	error_mat_t*,
+	error_mat_t*,
+	error_mat_t*
+> error_mat_tuple_t;
 
 #endif /* end of include guard: TYPEDEFS_H */

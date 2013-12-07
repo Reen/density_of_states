@@ -44,6 +44,9 @@ protected:
 	//! Output file descriptor for per-bin-errors from Power Method
 	std::ofstream out_pow;
 
+	//! Output file descriptor for per-bin-errors from Wang Landau Method
+	std::ofstream out_wl;
+
 	//! Tag to be appended to output file names
 	std::string tag;
 
@@ -64,6 +67,9 @@ protected:
 
 	//! error accumulator "matrix" to record per-bin-errors from Power Method
 	error_mat_t error_per_bin_pow;
+
+	//! error accumulator "matrix" to record per-bin-errors from Wang Landau Method
+	error_mat_t error_per_bin_wl;
 
 	//! Tuple with pointers to error_per_bin_pow, error_per_bin_gth & error_per_bin_lsq
 	error_mat_tuple_t error_matrices;

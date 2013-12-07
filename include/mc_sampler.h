@@ -32,7 +32,9 @@ public:
 		return false;
 	}
 
-	double calculate_error(const vector_double_t & /*exact*/) {
+	double calculate_error(const vector_double_t& /*exact*/,
+						   error_mat_tuple_t /*error_matrices*/,
+						   const size_t& /*index*/) {
 		return 0.0;
 	}
 
@@ -157,8 +159,12 @@ public:
 		return true;
 	}
 
-	double calculate_error(const vector_double_t &exact) {
-		return rhab::calculate_error(exact, g, true);
+	double calculate_error(const vector_double_t& exact,
+						   error_mat_tuple_t error_matrices,
+						   const size_t& index) {
+		return rhab::calculate_error(exact, g, error_matrices.get<3>(), index, true);
+	}
+};
 	}
 };
 

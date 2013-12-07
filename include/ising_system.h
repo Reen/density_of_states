@@ -124,7 +124,7 @@ private:
 						error_acc[index].err3(err_power);
 					}
 					if (sampler.has_own_statistics()) {
-						double err = sampler.calculate_error(dos_exact_norm);
+						double err = sampler.calculate_error(dos_exact_norm, error_matrices, index);
 						error_acc[index].err4(err);
 					}
 

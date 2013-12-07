@@ -5,7 +5,7 @@
 #include <iomanip>
 
 SimulationSystem::SimulationSystem(settings_t &s)
-	: settings(s), error_matrices(&error_per_bin_lsq, &error_per_bin_gth, &error_per_bin_pow) {}
+	: settings(s), error_matrices(&error_per_bin_lsq, &error_per_bin_gth, &error_per_bin_pow, &error_per_bin_wl) {}
 
 
 void SimulationSystem::setup() {
@@ -35,6 +35,10 @@ void SimulationSystem::setup() {
 	error_per_bin_gth.resize(error_acc_size, n_bins);
 	error_per_bin_pow.resize(error_acc_size, n_bins);
 
+	if (boost::any_cast<size_t>(settings["sampler"]) == 1) {
+		error_per_bin_wl.resize(error_acc_size, n_bins);
+	}
+
 	// safety check
 	if (steps % error_check_f != 0) {
 		std::cerr << "Error: check-frequency and number of steps don't match" << std::endl;
@@ -47,6 +51,10 @@ void SimulationSystem::open_output_files(const std::string& fn) {
 	open_output_file(out_lsq, fn + ".lsq");
 	open_output_file(out_gth, fn + ".gth");
 	open_output_file(out_pow, fn + ".pow");
+
+	if (boost::any_cast<size_t>(settings["sampler"]) == 1) {
+		open_output_file(out_wl,  fn + ".wl");
+	}
 }
 
 void SimulationSystem::open_output_file(std::ofstream &o, const std::string & fn) {
@@ -67,6 +75,10 @@ void SimulationSystem::write_header() {
 	out_lsq << oss.str();
 	out_gth << oss.str();
 	out_pow << oss.str();
+
+	if (boost::any_cast<size_t>(settings["sampler"]) == 1) {
+		out_wl  << oss.str();
+	}
 }
 
 void write_per_bin_error_file(std::ofstream& out, error_mat_t& error_per_bin, const std::string& header) {
@@ -145,5 +157,9 @@ void SimulationSystem::write_output() {
 	write_per_bin_error_file(out_lsq, error_per_bin_lsq, oss.str());
 	write_per_bin_error_file(out_gth, error_per_bin_gth, oss.str());
 	write_per_bin_error_file(out_pow, error_per_bin_pow, oss.str());
+
+	if (boost::any_cast<size_t>(settings["sampler"]) == 1) {
+		write_per_bin_error_file(out_wl,  error_per_bin_wl,  oss.str());
+	}
 
 }
