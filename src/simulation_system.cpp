@@ -42,19 +42,18 @@ void SimulationSystem::setup() {
 	}
 }
 
-bool SimulationSystem::open_output_files(const std::string& fn) {
+void SimulationSystem::open_output_files(const std::string& fn) {
 	open_output_file(out,     fn);
 	open_output_file(out_lsq, fn + ".lsq");
 	open_output_file(out_gth, fn + ".gth");
 	open_output_file(out_pow, fn + ".pow");
 }
 
-bool SimulationSystem::open_output_file(std::ofstream &o, const std::string & fn) {
+void SimulationSystem::open_output_file(std::ofstream &o, const std::string & fn) {
 	o.open(fn.c_str());
 	if (!o.good()) {
 		throw std::runtime_error("Error: could not open output file '" + fn + "'");
 	}
-	return true;
 }
 
 void SimulationSystem::write_header() {

@@ -69,8 +69,8 @@ protected:
 	error_mat_tuple_t error_matrices;
 
 	virtual void setup_output() = 0;
-	bool open_output_files(const std::string& fn);
-	bool open_output_file(std::ofstream& o, const std::string& fn);
+	void open_output_files(const std::string& fn);
+	void open_output_file(std::ofstream& o, const std::string& fn);
 	virtual void write_header();
 
 public:
