@@ -2,6 +2,8 @@
 
 #define MC_SAMPLER_H
 
+#include <iomanip>
+
 
 // Boost Random
 #include <boost/random/mersenne_twister.hpp>
@@ -121,7 +123,7 @@ public:
 		g[i_old]+=ln_f;
 	}
 
-	void check(const size_t & step, const size_t & /*run*/) {
+	void check(const size_t & step, const size_t & run) {
 		if ((step-last_checked) < 10*H.size() || (step-last_refinement_step) < 10*H.size()) {
 			return;
 		}
@@ -138,7 +140,7 @@ public:
 				}
 			}
 		}
-		//std::cout << minH << " " <<  ((flatness * sumH)/countH) << " " <<  (minH > (flatness * sumH)/countH) << std::endl;
+		//std::cout << minH << " " <<  ((flatness * sumH)/countH) << " " <<  (minH > (flatness * sumH)/countH) << " " << ln_f << std::endl;
 		if (minH > (flatness * sumH)/countH) {
 			last_refinement_step = step;
 			H *= 0;
