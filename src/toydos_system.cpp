@@ -236,7 +236,7 @@ bool ToyDosSystem::has_regular_graph(size_t n, size_t r) {
 /**
  * Constructor
  */
-ToyDosSystem::ToyDosSystem(settings_t &s) : SimulationSystem(s) {}
+ToyDosSystem::ToyDosSystem(settings_t &s) : SimulationSystem(s), gengraph_seed_set(false) {}
 
 po::options_description ToyDosSystem::get_program_options() {
 	po::options_description desc("ToyDos System Options");
