@@ -165,8 +165,6 @@ public:
 		return rhab::calculate_error(exact, g, error_matrices.get<3>(), index, true);
 	}
 };
-	}
-};
 
 /**
  * QualityMeasureASampler
@@ -177,7 +175,7 @@ private:
 public:
 	QualityMeasureASampler(boost::mt19937 &rng, const matrix_int_t& qmat, const settings_t &settings)
 		: MCSampler(rng, settings), colsum(qmat.size1()) {
-		colsum *= 0;
+			std::fill(colsum.begin(), colsum.end(), 0);
 	}
 
 	template<class T1, class T2>
