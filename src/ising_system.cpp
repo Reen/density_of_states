@@ -92,8 +92,10 @@ void IsingSystem::setup_output() {
 			format = "ising_%1%_%2%S_%3%R_%4%M%7%%8%.out";
 			break;
 		case 0:
-		default:
 			format = "ising_%1%_%2%S_%3%R_%4%M_%5$0.2fT%7%%8%.out";
+			break;
+		default:
+			throw std::runtime_error("Unknown smapler");
 	}
 	std::string buf = str( boost::format(format)
 			% sampler_string[sampler]

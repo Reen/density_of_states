@@ -56,8 +56,10 @@ void ToyDosSystem::setup_output() {
 			format = "toydos_%1%_%2%S_%3%R_%4%M_%5%C%8%%9%.out";
 			break;
 		case 0:
-		default:
 			format = "toydos_%1%_%2%S_%3%R_%4%M_%5%C_%6$0.2fT%8%%9%.out";
+			break;
+		default:
+			throw std::runtime_error("Unknown smapler");
 	}
 	std::string buf = str( boost::format(format)
 			% sampler_string[sampler]
