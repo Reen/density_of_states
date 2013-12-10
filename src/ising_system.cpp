@@ -99,7 +99,11 @@ void IsingSystem::setup_output() {
 		default:
 			throw std::runtime_error("Unknown smapler");
 	}
-	std::string buf = str( boost::format(format)
+	boost::format fmt(format);
+	fmt.exceptions(boost::io::all_error_bits ^ (
+				boost::io::too_many_args_bit | boost::io::too_few_args_bit
+				));
+	std::string buf = str( fmt
 			% sampler_string[sampler]
 			% steps
 			% runs
