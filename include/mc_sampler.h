@@ -51,11 +51,15 @@ private:
 	double kB;
 	double T;
 	double beta;
+	size_t steps;
+	size_t schedule;
 public:
 	BoltzmannSampler(boost::mt19937 &rng, const matrix_int_t&, const settings_t &settings)
 		: MCSampler(rng, settings) {
-		kB = boost::any_cast<double>(settings.find("kB")->second);
-		T  = boost::any_cast<double>(settings.find("temperature")->second);
+		kB    = boost::any_cast<double>(settings.find("kB")->second);
+		T     = boost::any_cast<double>(settings.find("temperature")->second);
+		steps = boost::any_cast<size_t>(settings.find("steps")->second);
+		schedule = boost::any_cast<size_t>(settings.find("schedule")->second);
 		beta = -1./(kB * T);
 	}
 
@@ -70,8 +74,22 @@ public:
 	}
 
 	void check(const size_t & step, const size_t & /*run*/) {
-		//T = 2 - (1.9 * step/1e7);
-		//T = sin(step/2e5)+1.1;
+		double Tcur;
+		switch(schedule) {
+		// Linear Schedule
+		case 1:
+			Tcur = (0.1-T)/steps*step+T;
+			beta = -1./(kB * Tcur);
+			break;
+		// Sine Schedule
+		case 2:
+			Tcur = T*(sin(step/(steps/100))+1.0);
+			beta = -1./(kB * Tcur);
+			break;
+		case 0:
+		default:
+			break;
+		}
 	}
 };
 

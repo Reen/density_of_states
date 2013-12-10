@@ -64,6 +64,10 @@ void Simulation::parse_arguments(int argc, char *argv[]) {
 			"error-check-freq",
 			po::value<size_t>()->default_value(100),
 			"Frequency of error checking"
+		) (
+			"schedule",
+			po::value<size_t>()->default_value(0),
+			"Temperature Schedule to use for Sampler 0:\n0 – none, 1 – Linear, 2 – Sine"
 		);
 	all.add(desc);
 	for (simulation_systems_t::iterator iter = simulation_systems.begin();
