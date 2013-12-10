@@ -58,7 +58,7 @@ void ToyDosSystem::setup_output() {
 			format = "toydos_%1%_%2%S_%3%R_%4%M_%5%C%8%%9%.out";
 			break;
 		case 0:
-			format = "toydos_%1%_%2%S_%3%R_%4%M_%5%C_%6$0.2fT%8%%9%.out";
+			format = "toydos_%1%_%2%S_%3%R_%4%M_%5%C_%6$0.2fT_%10%Sd%8%%9%.out";
 			break;
 		default:
 			throw std::runtime_error("Unknown smapler");
@@ -73,6 +73,7 @@ void ToyDosSystem::setup_output() {
 			% boost::any_cast<double>(settings["flatness"])
 			% (tag.size() > 0 ? "_" : "")
 			% tag
+			% boost::any_cast<size_t>(settings["schedule"])
 		);
 
 	open_output_files(buf);

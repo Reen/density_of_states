@@ -94,7 +94,7 @@ void IsingSystem::setup_output() {
 			format = "ising_%1%_%2%S_%3%R_%4%M%7%%8%.out";
 			break;
 		case 0:
-			format = "ising_%1%_%2%S_%3%R_%4%M_%5$0.2fT%7%%8%.out";
+			format = "ising_%1%_%2%S_%3%R_%4%M_%5$0.2fT_%9%Sd%7%%8%.out";
 			break;
 		default:
 			throw std::runtime_error("Unknown smapler");
@@ -108,6 +108,7 @@ void IsingSystem::setup_output() {
 			% boost::any_cast<double>(settings["flatness"])
 			% (tag.size() > 0 ? "_" : "")
 			% tag
+			% boost::any_cast<size_t>(settings["schedule"])
 		);
 
 	open_output_files(buf);
