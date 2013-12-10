@@ -54,6 +54,7 @@ void ToyDosSystem::setup_output() {
 		case 2:
 		case 3:
 		case 4:
+		case 5:
 			format = "toydos_%1%_%2%S_%3%R_%4%M_%5%C%8%%9%.out";
 			break;
 		case 0:

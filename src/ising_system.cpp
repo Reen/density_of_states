@@ -90,6 +90,7 @@ void IsingSystem::setup_output() {
 		case 2:
 		case 3:
 		case 4:
+		case 5:
 			format = "ising_%1%_%2%S_%3%R_%4%M%7%%8%.out";
 			break;
 		case 0:
