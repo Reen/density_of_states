@@ -111,6 +111,7 @@ void Simulation::parse_arguments(int argc, char *argv[]) {
 	settings["tag"]           = vm["tag"].as<std::string>();
 	settings["sampler"]       = vm["sampler"].as<size_t>();
 	settings["cmdline"]       = cmdline;
+	settings["schedule"]      = vm["schedule"].as<size_t>();
 
 }
 
