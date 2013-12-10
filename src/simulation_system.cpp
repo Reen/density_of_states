@@ -35,7 +35,8 @@ void SimulationSystem::setup() {
 	error_per_bin_gth.resize(error_acc_size, n_bins);
 	error_per_bin_pow.resize(error_acc_size, n_bins);
 
-	if (boost::any_cast<size_t>(settings["sampler"]) == 1) {
+	size_t sampler = boost::any_cast<size_t>(settings["sampler"]);
+	if (sampler == 1 || sampler == 5) {
 		error_per_bin_wl.resize(error_acc_size, n_bins);
 	}
 
@@ -52,7 +53,8 @@ void SimulationSystem::open_output_files(const std::string& fn) {
 	open_output_file(out_gth, fn + ".gth");
 	open_output_file(out_pow, fn + ".pow");
 
-	if (boost::any_cast<size_t>(settings["sampler"]) == 1) {
+	size_t sampler = boost::any_cast<size_t>(settings["sampler"]);
+	if (sampler == 1 || sampler == 5) {
 		open_output_file(out_wl,  fn + ".wl");
 	}
 }
@@ -76,7 +78,8 @@ void SimulationSystem::write_header() {
 	out_gth << oss.str();
 	out_pow << oss.str();
 
-	if (boost::any_cast<size_t>(settings["sampler"]) == 1) {
+	size_t sampler = boost::any_cast<size_t>(settings["sampler"]);
+	if (sampler == 1 || sampler == 5) {
 		out_wl  << oss.str();
 	}
 }
@@ -158,7 +161,8 @@ void SimulationSystem::write_output() {
 	write_per_bin_error_file(out_gth, error_per_bin_gth, oss.str());
 	write_per_bin_error_file(out_pow, error_per_bin_pow, oss.str());
 
-	if (boost::any_cast<size_t>(settings["sampler"]) == 1) {
+	size_t sampler = boost::any_cast<size_t>(settings["sampler"]);
+	if (sampler == 1 || sampler == 5) {
 		write_per_bin_error_file(out_wl,  error_per_bin_wl,  oss.str());
 	}
 

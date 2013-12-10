@@ -80,6 +80,7 @@ void IsingSystem::setup_output() {
 	sampler_string.push_back("QB");
 	sampler_string.push_back("QA");
 	sampler_string.push_back("TM");
+	sampler_string.push_back("1t");
 
 	std::string format;
 	switch (sampler) {
@@ -163,6 +164,8 @@ void IsingSystem::setup() {
 	// set_size should have been called at this point
 	// and thus n_bins should have a value
 	settings["macrostates"] = n_bins;
+	size_t num_unvisited_energies = 1;
+	settings["num_unvisited_energies"] = num_unvisited_energies;
 
 	read_exact_dos();
 	setup_output();
@@ -184,6 +187,9 @@ bool IsingSystem::run() {
 		break;
 	case 4:
 		mc_loop<TransitionMatrixSampler>();
+		break;
+	case 5:
+		mc_loop<WangLandau1tSampler>();
 		break;
 	default:
 		std::cerr << "Error: unknown sampler" << std::endl;

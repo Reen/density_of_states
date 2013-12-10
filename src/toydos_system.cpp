@@ -44,6 +44,7 @@ void ToyDosSystem::setup_output() {
 	sampler_string.push_back("QB");
 	sampler_string.push_back("QA");
 	sampler_string.push_back("TM");
+	sampler_string.push_back("1t");
 
 	std::string format;
 	switch (sampler) {
@@ -276,6 +277,9 @@ void ToyDosSystem::setup() {
 		throw e;
 	}
 
+	size_t num_unvisited_energies = 0;
+	settings["num_unvisited_energies"] = num_unvisited_energies;
+
 	//read_exact_dos();
 	setup_output();
 	setup_variables();
@@ -298,6 +302,9 @@ bool ToyDosSystem::run() {
 		break;
 	case 4:
 		mc_loop<TransitionMatrixSampler>();
+		break;
+	case 5:
+		mc_loop<WangLandau1tSampler>();
 		break;
 	default:
 		std::cerr << "Error: unknown sampler" << std::endl;

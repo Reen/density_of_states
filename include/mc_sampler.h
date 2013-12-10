@@ -166,6 +166,84 @@ public:
 	}
 };
 
+class WangLandau1tSampler : public WangLandauSampler {
+protected:
+	size_t count0_pre1, count0_pre2, step_pre2, max_count0;
+	bool use_one_t;
+	size_t step_;
+public:
+	WangLandau1tSampler(boost::mt19937& rng, const matrix_int_t& Q, const settings_t& settings)
+		: WangLandauSampler(rng, Q, settings), count0_pre1(0), count0_pre2(0),
+		  step_pre2(0), max_count0(0), use_one_t(false) {
+		max_count0 = boost::any_cast<size_t>(settings.find("num_unvisited_energies")->second);
+	}
+
+	template<class T1, class T2>
+	bool operator()(const T1 & /*dE*/, const T2 &i_old, const T2 &i_new) {
+		bool res = ((g[i_old] >= g[i_new]) || (dist01(rng) <= exp(g[i_old]-g[i_new])));
+
+		if (use_one_t) {
+			ln_f = 1./step_;
+		}
+
+		if (res) {
+			H[i_new]++;
+			g[i_new]+=ln_f;
+		} else {
+			H[i_old]++;
+			g[i_old]+=ln_f;
+		}
+		return res;
+	}
+
+	void check(const size_t & step, const size_t & run) {
+		step_ = step;
+		if ((step-last_checked) < 10*H.size()
+			|| (step-last_refinement_step) < 10*H.size()
+			|| use_one_t) {
+			return;
+		}
+		last_checked = step;
+		size_t count0 = 0;
+		//int minH = INT_MAX;
+		//int countH = 0;
+		//int sumH = 0;
+		for (size_t i = 0; i < H.size(); ++i) {
+			if (H[i] == 0) {
+				count0++;
+			}
+		}
+
+		if (count0 == max_count0
+			&& count0 == count0_pre1
+			&& count0 == count0_pre2) {
+			last_refinement_step = step;
+			H *= 0;
+			ln_f /= 2.0;
+
+			if (ln_f <= 1.0/step) {
+				//use_one_t = true;
+				//std::cout << "switched to 1/t" << std::endl;
+			}
+
+#if VERBOSE == 1
+			std::cout << std::setw(15) << std::right << run
+					  << std::setw(15) << std::right << step
+					  << std::setw(15) << std::right << ln_f
+					  << std::setw(15) << std::right << count0
+					  << std::setw(15) << std::right << count0_pre1
+					  << std::setw(15) << std::right << count0_pre2
+					  << "\n";
+#endif
+		}
+		if (step-step_pre2 > 1500 * H.size()) {
+			count0_pre2 = count0_pre1;
+			step_pre2 = step;
+		}
+		count0_pre1 = count0;
+	}
+};
+
 /**
  * QualityMeasureASampler
  */
