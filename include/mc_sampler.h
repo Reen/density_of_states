@@ -103,13 +103,14 @@ protected:
 	double ln_f;
 	double flatness;
 	size_t macrostates;
-	size_t last_refinement_step, last_checked;
+	size_t last_refinement_step, last_checked, max_count0;
 public:
 	WangLandauSampler(boost::mt19937 &rng, const matrix_int_t&, const settings_t &settings)
 		: MCSampler(rng, settings), ln_f(1.0), last_refinement_step(0), last_checked(0)
 	{
 		macrostates = boost::any_cast<size_t>(settings.find("macrostates")->second);
 		flatness    = boost::any_cast<double>(settings.find("flatness")->second);
+		max_count0  = boost::any_cast<size_t>(settings.find("num_unvisited_energies")->second);
 
 		H.resize(macrostates);
 		g.resize(macrostates);
@@ -160,6 +161,13 @@ public:
 				}
 			}
 		}
+
+		// We have not explored all available states
+		// in this refinement step => return.
+		if (H.size() - countH != max_count0) {
+			return;
+		}
+
 		//std::cout << minH << " " <<  ((flatness * sumH)/countH) << " " <<  (minH > (flatness * sumH)/countH) << " " << ln_f << std::endl;
 		if (minH > (flatness * sumH)/countH) {
 			last_refinement_step = step;
@@ -186,14 +194,13 @@ public:
 
 class WangLandau1tSampler : public WangLandauSampler {
 protected:
-	size_t count0_pre1, count0_pre2, step_pre2, max_count0;
+	size_t count0_pre1, count0_pre2, step_pre2;
 	bool use_one_t;
 	size_t step_;
 public:
 	WangLandau1tSampler(boost::mt19937& rng, const matrix_int_t& Q, const settings_t& settings)
 		: WangLandauSampler(rng, Q, settings), count0_pre1(0), count0_pre2(0),
-		  step_pre2(0), max_count0(0), use_one_t(false) {
-		max_count0 = boost::any_cast<size_t>(settings.find("num_unvisited_energies")->second);
+		  step_pre2(0), use_one_t(false) {
 	}
 
 	template<class T1, class T2>
