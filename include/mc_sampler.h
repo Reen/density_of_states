@@ -195,12 +195,14 @@ public:
 class WangLandau1tSampler : public WangLandauSampler {
 protected:
 	size_t count0_pre1, count0_pre2, step_pre2;
+	double param_c;
 	bool use_one_t;
 	size_t step_;
 public:
 	WangLandau1tSampler(boost::mt19937& rng, const matrix_int_t& Q, const settings_t& settings)
 		: WangLandauSampler(rng, Q, settings), count0_pre1(0), count0_pre2(0),
 		  step_pre2(0), use_one_t(false) {
+		param_c = boost::any_cast<double>(settings.find("one-over-t-c")->second);
 	}
 
 	template<class T1, class T2>
@@ -208,7 +210,7 @@ public:
 		bool res = ((g[i_old] >= g[i_new]) || (dist01(rng) <= exp(g[i_old]-g[i_new])));
 
 		if (use_one_t) {
-			ln_f = 1./step_;
+			ln_f = param_c/step_;
 		}
 
 		if (res) {
@@ -246,9 +248,9 @@ public:
 			H *= 0;
 			ln_f /= 2.0;
 
-			if (ln_f <= 1.0/step) {
-				//use_one_t = true;
-				//std::cout << "switched to 1/t" << std::endl;
+			if (ln_f <= param_c/step) {
+				use_one_t = true;
+				//std::cout << "switching to 1/t after step " << step << std::endl;
 			}
 
 #if VERBOSE == 1

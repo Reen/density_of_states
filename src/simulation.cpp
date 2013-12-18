@@ -68,6 +68,10 @@ void Simulation::parse_arguments(int argc, char *argv[]) {
 			"schedule",
 			po::value<size_t>()->default_value(0),
 			"Temperature Schedule to use for Sampler 0:\n0 – none, 1 – Linear, 2 – Sine"
+		) (
+			"one-over-t-c",
+			po::value<double>()->default_value(10.0),
+			"Parameter c of 1/t alg., i.e. c/t"
 		);
 	all.add(desc);
 	for (simulation_systems_t::iterator iter = simulation_systems.begin();
@@ -112,6 +116,7 @@ void Simulation::parse_arguments(int argc, char *argv[]) {
 	settings["sampler"]       = vm["sampler"].as<size_t>();
 	settings["cmdline"]       = cmdline;
 	settings["schedule"]      = vm["schedule"].as<size_t>();
+	settings["one-over-t-c"]  = vm["one-over-t-c"].as<double>();
 
 }
 
