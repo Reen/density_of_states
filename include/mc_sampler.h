@@ -223,8 +223,8 @@ public:
 
 	void check(const size_t & step, const size_t & run) {
 		step_ = step;
-		if ((step-last_checked) < 10*H.size()
-			|| (step-last_refinement_step) < 10*H.size()
+		if ((step-last_checked) < 100*H.size()
+			|| (step-last_refinement_step) < 100*H.size()
 			|| use_one_t) {
 			return;
 		}
