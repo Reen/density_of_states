@@ -120,12 +120,13 @@ void IsingSystem::setup_output() {
 	write_header();
 
 	out << "#";
-	out << "\n# sampler:     " << sampler << " - " << sampler_string[sampler];
-	out << "\n# steps:       " << steps;
-	out << "\n# runs:        " << runs;
-	out << "\n# n_bins:      " << n_bins;
-	out << "\n# temperature: " << boost::any_cast<double>(settings["temperature"]);
-	out << "\n# flatness:    " << boost::any_cast<double>(settings["flatness"]);
+	out << "\n# sampler:      " << sampler << " - " << sampler_string[sampler];
+	out << "\n# steps:        " << steps;
+	out << "\n# runs:         " << runs;
+	out << "\n# n_bins:       " << n_bins;
+	out << "\n# temperature:  " << boost::any_cast<double>(settings["temperature"]);
+	out << "\n# flatness:     " << boost::any_cast<double>(settings["flatness"]);
+	out << "\n# one-over-t-c: " << boost::any_cast<double>(settings["one-over-t-c"]);
 	out << "\n#" << std::endl;
 }
 

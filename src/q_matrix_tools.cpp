@@ -273,6 +273,9 @@ double rhab::calculate_error(const vector_double_t &exact,
      * Calculate the absolute value of it and divide by exact[i].
      *
      * exact[i] is assumed to be positive
+     *
+     * @todo: calculate both error in density of states and entropy,
+     *        i.e. additionally dos[i]-log(exact[i])/log(exact[i])
      */
     double norm = 0;
     double max  = *(std::max_element(dos.begin(), dos.end()));
