@@ -98,7 +98,9 @@ private:
 
 					double err_lq, err_gth, err_power;
 					bool   suc_lq, suc_gth, suc_power;
-					boost::tie(err_lq, err_gth, err_power, suc_lq, suc_gth, suc_power) = rhab::calculate_error_q(dos_exact_norm, Q, Qd, error_matrices, index);
+					double err_qm;
+					boost::tie(err_lq, err_gth, err_power, suc_lq, suc_gth, suc_power, err_qm) =
+						rhab::calculate_error_q(dos_exact_norm, exact_q, Q, Qd, error_matrices, index);
 					if (suc_lq) {
 						error_acc[index].err1(err_lq);
 					}
@@ -114,8 +116,14 @@ private:
 						error_acc[index].err4(err);
 					}
 
-					// @todo
-					//error_acc[index].get<5>() += rhab::calculate_error_q_matrix(exact_q, Qd);
+					// we only capture the parameter for the first run
+					if (sampler.has_own_statistics() && run == 0) {
+						double param(0.0);
+						sampler.get_parameter(param);
+						error_acc[index].wl_f = param;
+					}
+
+					error_acc[index].err_q(err_qm);
 
 					index++;
 					if (step % (10*error_check_f) == 0) {

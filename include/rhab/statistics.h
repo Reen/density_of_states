@@ -45,6 +45,15 @@ struct StepStatistics {
 			boost::accumulators::tag::mean,
 			boost::accumulators::tag::variance
 				> > err4;
+	boost::accumulators::accumulator_set<
+		double,
+		boost::accumulators::stats<
+			boost::accumulators::tag::min,
+			boost::accumulators::tag::max,
+			boost::accumulators::tag::mean,
+			boost::accumulators::tag::variance
+				> > err_q;
+	double wl_f;
 };
 
 }

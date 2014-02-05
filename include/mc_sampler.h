@@ -32,6 +32,8 @@ public:
 		return false;
 	}
 
+	void get_parameter(double& /*param*/) const {}
+
 	double calculate_error(const vector_double_t& /*exact*/,
 						   error_mat_tuple_t /*error_matrices*/,
 						   const size_t& /*index*/) {
@@ -183,6 +185,10 @@ public:
 
 	bool has_own_statistics() {
 		return true;
+	}
+
+	void get_parameter(double& param) const {
+		param = ln_f;
 	}
 
 	double calculate_error(const vector_double_t& exact,

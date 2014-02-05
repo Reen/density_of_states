@@ -113,7 +113,8 @@ private:
 
 					double err_lq, err_gth, err_power;
 					bool   suc_lq, suc_gth, suc_power;
-					boost::tie(err_lq, err_gth, err_power, suc_lq, suc_gth, suc_power) = rhab::calculate_error_q(dos_exact_norm, Q, Qd, error_matrices, index);
+					double q_error;
+					boost::tie(err_lq, err_gth, err_power, suc_lq, suc_gth, suc_power, q_error) = rhab::calculate_error_q(dos_exact_norm, matrix_double_t(), Q, Qd, error_matrices, index);
 					if (suc_lq) {
 						error_acc[index].err1(err_lq);
 					}

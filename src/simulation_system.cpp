@@ -110,17 +110,21 @@ void SimulationSystem::write_output() {
 	oss << "\n";
 	oss << "# " << std::setw(8) << "time->";
 	char line[3000];
-	snprintf(line, 3000, "#\n#%14i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i\n", 1,
+	snprintf(line, 3000, "#\n#%14i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i%15i\n", 1,
 			2,  3,  4,  5,  6,
 			7,  8,  9,  10, 11,
 			12, 13, 14, 15, 16,
-			17, 18, 19, 20, 21);
+			17, 18, 19, 20, 21,
+			22, 23, 24, 25, 26,
+			27);
 	out << line;
-	snprintf(line, 3000, "#%14s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s\n", "time",
+	snprintf(line, 3000, "#%14s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s\n", "time",
 			"mean_lq",    "var_lq",    "cnt_lq",    "min_lq",    "max_lq",
 			"mean_gth",   "var_gth",   "cnt_gth",   "min_gth",   "max_gth",
 			"mean_power", "var_power", "cnt_power", "min_power", "max_power",
-			"mean_other", "var_other", "cnt_other", "min_other", "max_other"
+			"mean_other", "var_other", "cnt_other", "min_other", "max_other",
+			"mean_q",     "var_q",     "cnt_q",     "min_q",     "max_q",
+			"wl_f"
 			);
 	out << line;
 	for (size_t i = 0; i < error_acc.size(); i++) {
@@ -129,28 +133,35 @@ void SimulationSystem::write_output() {
 		double mean_gth   = boost::accumulators::mean(error_acc[i].err2);
 		double mean_power = boost::accumulators::mean(error_acc[i].err3);
 		double mean_other = boost::accumulators::mean(error_acc[i].err4);
+		double mean_q     = boost::accumulators::mean(error_acc[i].err_q);
 		double var_lq     = boost::accumulators::variance(error_acc[i].err1);
 		double var_gth    = boost::accumulators::variance(error_acc[i].err2);
 		double var_power  = boost::accumulators::variance(error_acc[i].err3);
 		double var_other  = boost::accumulators::variance(error_acc[i].err4);
+		double var_q      = boost::accumulators::variance(error_acc[i].err_q);
 		size_t cnt_lq     = boost::accumulators::count(error_acc[i].err1);
 		size_t cnt_gth    = boost::accumulators::count(error_acc[i].err2);
 		size_t cnt_power  = boost::accumulators::count(error_acc[i].err3);
 		size_t cnt_other  = boost::accumulators::count(error_acc[i].err4);
+		size_t cnt_q      = boost::accumulators::count(error_acc[i].err_q);
 		double min_lq     = boost::accumulators::min(error_acc[i].err1);
 		double min_gth    = boost::accumulators::min(error_acc[i].err2);
 		double min_power  = boost::accumulators::min(error_acc[i].err3);
 		double min_other  = boost::accumulators::min(error_acc[i].err4);
+		double min_q      = boost::accumulators::min(error_acc[i].err_q);
 		double max_lq     = boost::accumulators::max(error_acc[i].err1);
 		double max_gth    = boost::accumulators::max(error_acc[i].err2);
 		double max_power  = boost::accumulators::max(error_acc[i].err3);
 		double max_other  = boost::accumulators::max(error_acc[i].err4);
+		double max_q      = boost::accumulators::max(error_acc[i].err_q);
 		//double qm_err   = error_acc[i].get<5>() / runs;
-		snprintf(line, 3000, "%15lu%15g%15g%15lu%15g%15g%15g%15g%15lu%15g%15g%15g%15g%15lu%15g%15g%15g%15g%15lu%15g%15g\n", time,
+		snprintf(line, 3000, "%15lu%15g%15g%15lu%15g%15g%15g%15g%15lu%15g%15g%15g%15g%15lu%15g%15g%15g%15g%15lu%15g%15g%15g%15g%15lu%15g%15g%15g\n", time,
 				mean_lq,    var_lq,    cnt_lq,    min_lq,    max_lq,
 				mean_gth,   var_gth,   cnt_gth,   min_gth,   max_gth,
 				mean_power, var_power, cnt_power, min_power, max_power,
-				mean_other, var_other, cnt_other, min_other, max_other
+				mean_other, var_other, cnt_other, min_other, max_other,
+				mean_q,     var_q,     cnt_q,     min_q,     max_q,
+				error_acc[i].wl_f
 				);
 		out << line;
 		oss << std::setw(12) << time;
