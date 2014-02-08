@@ -216,7 +216,8 @@ public:
 		bool res = ((g[i_old] >= g[i_new]) || (dist01(rng) <= exp(g[i_old]-g[i_new])));
 
 		if (use_one_t) {
-			ln_f = param_c/step_;
+			// step / H.size() is the "time" \f$t\f$ as defined by Belardinelli et al.
+			ln_f = param_c/( step_/static_cast<double>(H.size()) );
 		}
 
 		if (res) {
@@ -254,7 +255,8 @@ public:
 			H *= 0;
 			ln_f /= 2.0;
 
-			if (ln_f <= param_c/step) {
+			// step / H.size() is the "time" \f$t\f$ as defined by Belardinelli et al.
+			if (ln_f <= param_c/( step/static_cast<double>(H.size()) )) {
 				use_one_t = true;
 				//std::cout << "switching to 1/t after step " << step << std::endl;
 			}
