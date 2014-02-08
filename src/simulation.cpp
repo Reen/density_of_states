@@ -72,6 +72,10 @@ void Simulation::parse_arguments(int argc, char *argv[]) {
 			"one-over-t-c",
 			po::value<double>()->default_value(10.0),
 			"Parameter c of 1/t alg., i.e. c/t"
+		) (
+			"one-over-t-s",
+			po::value<size_t>()->default_value(1500),
+			"Parameter s of 1/t alg., i.e. s * macrostates"
 		);
 	all.add(desc);
 	for (simulation_systems_t::iterator iter = simulation_systems.begin();
@@ -117,6 +121,7 @@ void Simulation::parse_arguments(int argc, char *argv[]) {
 	settings["cmdline"]       = cmdline;
 	settings["schedule"]      = vm["schedule"].as<size_t>();
 	settings["one-over-t-c"]  = vm["one-over-t-c"].as<double>();
+	settings["one-over-t-s"]  = vm["one-over-t-s"].as<size_t>();
 
 }
 

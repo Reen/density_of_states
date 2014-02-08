@@ -203,12 +203,13 @@ protected:
 	size_t count0_pre1, count0_pre2, step_pre2;
 	double param_c;
 	bool use_one_t;
-	size_t step_;
+	size_t step_, param_s;
 public:
 	WangLandau1tSampler(boost::mt19937& rng, const matrix_int_t& Q, const settings_t& settings)
 		: WangLandauSampler(rng, Q, settings), count0_pre1(0), count0_pre2(0),
 		  step_pre2(0), use_one_t(false) {
 		param_c = boost::any_cast<double>(settings.find("one-over-t-c")->second);
+		param_s = boost::any_cast<size_t>(settings.find("one-over-t-s")->second);
 	}
 
 	template<class T1, class T2>
@@ -271,7 +272,7 @@ public:
 					  << "\n";
 #endif
 		}
-		if (step-step_pre2 > 1500 * H.size()) {
+		if (step-step_pre2 > param_s * H.size()) {
 			count0_pre2 = count0_pre1;
 			step_pre2 = step;
 		}
