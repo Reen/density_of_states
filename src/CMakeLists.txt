@@ -46,7 +46,7 @@ find_package ( GSL REQUIRED )
 include_directories( ${Boost_INCLUDE_DIRS} )
 
 # TARGET: ising ###############
-add_executable( ising ising.cpp simulation.cpp simulation_rng.cpp q_matrix_tools.cpp ising_system.cpp simulation_system.cpp toydos_system.cpp ${SOURCES_GENERAL} )
+add_executable( ising ising.cpp simulation.cpp simulation_rng.cpp q_matrix_tools.cpp ising_system.cpp simulation_system.cpp toydos_system.cpp lennard_jones_system.cpp ${SOURCES_GENERAL} )
 target_link_libraries( ising ${Boost_LIBRARIES} ${GSL_LIBRARIES})
 
 set_property(TARGET ising PROPERTY OUTPUT_NAME_DEBUG "ising_debug")

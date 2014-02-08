@@ -20,6 +20,7 @@
 #include "simulation_system.h"
 #include "ising_system.h"
 #include "toydos_system.h"
+#include "lennard_jones_system.h"
 
 
 
@@ -53,6 +54,7 @@ public:
 		insert(simulation_systems)
 			("Ising",  boost::shared_ptr<SimulationSystem>(new IsingSystem(settings)))
 			("ToyDos", boost::shared_ptr<SimulationSystem>(new ToyDosSystem(settings)))
+			("LJones", boost::shared_ptr<SimulationSystem>(new LennardJonesSystem(settings)))
 			;
 	}
 
