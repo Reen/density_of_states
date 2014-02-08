@@ -250,7 +250,6 @@ public:
 		}
 
 		if (count0 == max_count0
-			&& count0 == count0_pre1
 			&& count0 == count0_pre2) {
 			last_refinement_step = step;
 			H *= 0;
