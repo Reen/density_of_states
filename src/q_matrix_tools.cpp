@@ -198,6 +198,7 @@ double rhab::calculate_error(const vector_double_t &exact, const vector_double_t
 	vector_double_t::const_iterator i1 = dos.begin();
 	vector_double_t::const_iterator i2 = exact.begin();
 	double sum = 0.0;
+	size_t cnt = 0;
 	if (normalize) {
 		/**
 		 * Density of states provided in dos is actually \f$\ln(\Omega)\f$.
@@ -224,6 +225,7 @@ double rhab::calculate_error(const vector_double_t &exact, const vector_double_t
 			// Be careful here and do not devide by 0
 			if ((*i2) > 0) {
 				sum += fabs((exp(*i1-max)/norm - *i2) / (*i2));
+				cnt ++;
 			}
 #ifdef DEBUG
 			if (!boost::math::isfinite(sum) || !boost::math::isfinite(*i2)) {
@@ -238,6 +240,7 @@ double rhab::calculate_error(const vector_double_t &exact, const vector_double_t
 			// Be careful here and do not divide by 0
 			if ((*i2) > 0) {
 				sum += fabs((*i1 - *i2) / (*i2));
+				cnt ++;
 			}
 #ifdef DEBUG
 			if (!boost::math::isfinite(sum) || !boost::math::isfinite(*i1) || !boost::math::isfinite(*i2)) {
@@ -246,7 +249,7 @@ double rhab::calculate_error(const vector_double_t &exact, const vector_double_t
 #endif
 		}
 	}
-	return sum;
+	return (sum / cnt);
 }
 
 double rhab::calculate_error(const vector_double_t &exact,
@@ -263,6 +266,8 @@ double rhab::calculate_error(const vector_double_t &exact,
   std::fill(err.begin(), err.end(), 0.0);
 
   double sum = 0.0;
+  size_t cnt = 0;
+
   if (normalize) {
     /*
      * Density of states provided in dos is actually \f$\ln(\Omega)\f$.
@@ -296,6 +301,7 @@ double rhab::calculate_error(const vector_double_t &exact,
       if ((exact[i]) > 0) {
         err[i] = fabs( (exp(dos[i]-max)/norm - exact[i]) / exact[i] );
         sum += err[i];
+        cnt ++;
       }
       (*error_per_bin)(index, i)(err[i]);
 #ifdef DEBUG
@@ -313,6 +319,7 @@ double rhab::calculate_error(const vector_double_t &exact,
       if (exact[i] > 0) {
         err[i] = fabs( (dos[i] - exact[i]) / exact[i] );
         sum += err[i];
+        cnt ++;
       }
       (*error_per_bin)(index, i)(err[i]);
 #ifdef DEBUG
@@ -325,7 +332,8 @@ double rhab::calculate_error(const vector_double_t &exact,
 #endif
     }
   }
-  return sum;
+
+  return (sum / cnt);
 }
 
 double rhab::calculate_error_q_matrix(const matrix_double_t &Qex, const matrix_double_t &Q) {
