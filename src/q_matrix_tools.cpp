@@ -160,13 +160,9 @@ bool rhab::calculate_dos_leastsquares(matrix_int_t imat, matrix_double_t &dmat, 
 
   for (size_t i = 0; i < imat.size1(); i++) {
     hist[i] = sum(row(imat,i));
-    //if (hist[i] > 0) {
-      //hist_count++;
-    //}
   }
 
   int xn = coords.size()/2;
-  vector_double_t measurements(xn);
 
   gsl_matrix *X, *cov;
   gsl_vector *y, *c;
@@ -177,27 +173,15 @@ bool rhab::calculate_dos_leastsquares(matrix_int_t imat, matrix_double_t &dmat, 
   c = gsl_vector_calloc(dos.size());
   cov = gsl_matrix_calloc(dos.size(), dos.size());
 
-  for (int c = 0; c < 2*xn; c+=2) {
-    const size_t &i = coords[c];
-    const size_t &j = coords[c+1];
+  for (int k = 0; k < 2*xn; k+=2) {
+    const size_t &i = coords[k];
+    const size_t &j = coords[k+1];
     //hx[] = (p[i]-p[j]+log( (*ld->dmat)(i,j) / (*ld->dmat)(j,i) ))/sqrt(1./ (*ld->hist)[i] + 1./ (*ld->hist)[j] + 1./ (*ld->imat)(j,i) + 1./ (*ld->imat)(i,j));
     //std::cout << i << " " << j << hist[i] << " " << hist[j] << " " << imat(j,i) << " " << imat(i,j) << " " << dmat(j,i) << " " << dmat(i,j)  << std::endl;
-    gsl_matrix_set(X, c/2, i,  1.0/sqrt(1./hist[i] + 1./hist[j] + 1./imat(j,i) + 1./imat(i,j)));
-    gsl_matrix_set(X, c/2, j, -1.0/sqrt(1./hist[i] + 1./hist[j] + 1./imat(j,i) + 1./imat(i,j)));
-    gsl_vector_set(y, c/2, -log( dmat(i,j) / dmat(j,i) )/sqrt(1./hist[i] + 1./hist[j] + 1./imat(j,i) + 1./imat(i,j)));
-    //gsl_vector_set(w, c/2, 1.0/(1./hist[i] + 1./hist[j] + 1./imat(j,i) + 1./imat(i,j)));
+    gsl_matrix_set(X, k/2, i,  1.0/sqrt(1./hist[i] + 1./hist[j] + 1./imat(j,i) + 1./imat(i,j)));
+    gsl_matrix_set(X, k/2, j, -1.0/sqrt(1./hist[i] + 1./hist[j] + 1./imat(j,i) + 1./imat(i,j)));
+    gsl_vector_set(y, k/2, -log( dmat(i,j) / dmat(j,i) )/sqrt(1./hist[i] + 1./hist[j] + 1./imat(j,i) + 1./imat(i,j)));
   }
-
-  /*
-  for (int i = 0; i < xn; i++) {
-    for (int j = 0; j < dos.size(); ++j)
-    {
-      std::cout << std::setprecision(12) << gsl_matrix_get(X,i,j) << '\t';
-    }
-    std::cout << '\t' << gsl_vector_get(y, i);
-    std::cout << std::endl;
-  }
-  */
 
   {
     gsl_multifit_linear_workspace * work = gsl_multifit_linear_alloc(xn, dos.size());
