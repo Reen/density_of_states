@@ -70,7 +70,7 @@ void Simulation::parse_arguments(int argc, char *argv[]) {
 			"Temperature Schedule to use for Sampler 0:\n0 – none, 1 – Linear, 2 – Sine"
 		) (
 			"one-over-t-c",
-			po::value<double>()->default_value(10.0),
+			po::value<double>()->default_value(1.0),
 			"Parameter c of 1/t alg., i.e. c/t"
 		) (
 			"one-over-t-s",
