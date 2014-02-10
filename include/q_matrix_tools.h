@@ -39,6 +39,13 @@ bool calculate_dos_power(const matrix_double_t &inner_mat, vector_double_t &dos)
 bool calculate_dos_leastsquares(matrix_int_t imat, matrix_double_t &dmat, vector_double_t &dos);
 
 /**
+ * calculate_dos_minimization
+ *
+ * Calculates the Density of States by minimizing a function
+ */
+bool calculate_dos_minimization(matrix_int_t imat, matrix_double_t &dmat, vector_double_t &dos);
+
+/**
  * calculate_error_q_matrix
  */
 double calculate_error_q_matrix(const matrix_double_t &Qex, const matrix_double_t &Q);

@@ -10,7 +10,122 @@ extern "C"
 }
 
 #include <gsl/gsl_multifit.h>
+#include <gsl/gsl_multimin.h>
 
+typedef boost::tuple<const matrix_int_t*,
+                     const matrix_double_t*,
+                     const vector_int_t*,
+                     const std::vector<size_t>*
+                     > params_t;
+
+double variance_function(const gsl_vector * x, void * params) {
+  params_t* p = (params_t*)params;
+  const matrix_int_t*        imat   = boost::get<0>(*p);
+  const matrix_double_t*     dmat   = boost::get<1>(*p);
+  const vector_int_t*        hist   = boost::get<2>(*p);
+  const std::vector<size_t>* coords = boost::get<3>(*p);
+
+  double err = 0;
+
+  for (size_t k = 0; k < coords->size(); k+=2) {
+    const size_t &i = (*coords)[k];
+    const size_t &j = (*coords)[k+1];
+
+    double tmp = gsl_vector_get(x, i) - gsl_vector_get(x, j) + log((*dmat)(i,j) / (*dmat)(j,i));
+    double sigma = 1./(*imat)(i,j) + 1./(*hist)[i] + 1./(*imat)(j,i) + 1./(*hist)[j];
+    err += tmp*tmp / sigma;
+  }
+
+  return err;
+}
+
+bool rhab::calculate_dos_minimization(matrix_int_t imat, matrix_double_t &dmat, vector_double_t &dos) {
+  // Histogram
+  vector_int_t hist(imat.size1());
+
+  // coordinates of entries in the matrix stored one after another i1,j1,i2,j2,...
+  std::vector<size_t> coords;
+
+  /**
+   * Apply symmetry condition.
+   *
+   * We can only use pairs of T(i->j) and T(j->i) for the equation system.
+   */
+  for (size_t i = 0; i < imat.size1(); i++) {
+    for (size_t j = 0; j < imat.size2(); ++j) {
+      if (i==j) {
+        continue;
+      }
+      if (imat(i,j) > 0 && imat(j,i) > 0) {
+        coords.push_back(i);
+        coords.push_back(j);
+        continue;
+      }
+      imat(i,j) = imat(j,i) = 0;
+    }
+  }
+
+  if (coords.size()/2 < dos.size()) {
+    return false;
+  }
+
+  normalize_q(imat, dmat);
+
+  for (size_t i = 0; i < imat.size1(); i++) {
+    hist[i] = sum(row(imat,i));
+  }
+
+  size_t num_states = dos.size();
+
+  {
+    gsl_vector *ss, *x;
+    gsl_multimin_function minex_func;
+
+    params_t params(&imat, &dmat, &hist, &coords);
+
+    minex_func.n = num_states;
+    minex_func.f = variance_function;
+    minex_func.params = &params;
+
+    /* Starting point */
+    x = gsl_vector_alloc(num_states);
+    gsl_vector_set_all(x,  1.0);
+
+    /* Set initial step sizes to 1 */
+    ss = gsl_vector_alloc(num_states);
+    gsl_vector_set_all(ss, 1.0);
+
+    gsl_multimin_fminimizer *s = NULL;
+    s = gsl_multimin_fminimizer_alloc(gsl_multimin_fminimizer_nmsimplex2, dos.size());
+    gsl_multimin_fminimizer_set(s, &minex_func, x, ss);
+    int status;
+    size_t iter = 0;
+
+    do {
+      iter++;
+      status = gsl_multimin_fminimizer_iterate(s);
+
+      if (status) {
+        break;
+      }
+
+      double size = gsl_multimin_fminimizer_size(s);
+      status = gsl_multimin_test_size(size, 1e-2);
+    } while(status == GSL_CONTINUE && iter < 10000);
+
+    gsl_multimin_fminimizer_free(s);
+
+    for (size_t i = 0; i < dos.size(); i++) {
+      dos[i] = gsl_vector_get(x, i);
+    }
+
+    gsl_vector_free(x);
+    gsl_vector_free(ss);
+  }
+
+
+  return true;
+}
 
 bool rhab::calculate_dos_leastsquares(matrix_int_t imat, matrix_double_t &dmat, vector_double_t &dos) {
   vector_int_t hist(imat.size1());
