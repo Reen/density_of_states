@@ -12,10 +12,9 @@ extern "C"
 #include <gsl/gsl_multifit.h>
 #include <gsl/gsl_multimin.h>
 
-typedef boost::tuple<const matrix_int_t*,
-                     const matrix_double_t*,
-                     const vector_int_t*,
-                     const std::vector<size_t>*
+typedef boost::tuple<const std::vector<size_t>*,
+                     const std::vector<double>*,
+                     const std::vector<double>*
                      > params_t;
 
 /**
@@ -41,10 +40,9 @@ void apply_symmetry_conditions(matrix_int_t &imat, std::vector<size_t> &coords) 
 
 double variance_function(const gsl_vector * x, void * params) {
   params_t* p = (params_t*)params;
-  const matrix_int_t*        imat   = boost::get<0>(*p);
-  const matrix_double_t*     dmat   = boost::get<1>(*p);
-  const vector_int_t*        hist   = boost::get<2>(*p);
-  const std::vector<size_t>* coords = boost::get<3>(*p);
+  const std::vector<size_t>* coords  = boost::get<0>(*p);
+  const std::vector<double>* sigma   = boost::get<1>(*p);
+  const std::vector<double>* precalc = boost::get<2>(*p);
 
   double err = 0;
 
@@ -52,9 +50,16 @@ double variance_function(const gsl_vector * x, void * params) {
     const size_t &i = (*coords)[k];
     const size_t &j = (*coords)[k+1];
 
-    double tmp = gsl_vector_get(x, i) - gsl_vector_get(x, j) + log((*dmat)(i,j) / (*dmat)(j,i));
-    double sigma = 1./(*imat)(i,j) + 1./(*hist)[i] + 1./(*imat)(j,i) + 1./(*hist)[j];
-    err += tmp*tmp / sigma;
+    double xi(1.0), xj(1.0);
+    if (i < x->size) {
+      xi = gsl_vector_get(x, i);
+    }
+    if (j < x->size) {
+      xj = gsl_vector_get(x, j);
+    }
+
+    double tmp = xi - xj + (*precalc)[k/2];
+    err += tmp*tmp / (*sigma)[k/2];
   }
 
   return err;
@@ -66,9 +71,12 @@ bool rhab::calculate_dos_minimization(matrix_int_t imat, matrix_double_t &dmat, 
 
   // coordinates of entries in the matrix stored one after another i1,j1,i2,j2,...
   std::vector<size_t> coords;
+  std::vector<double> sigma;
+  std::vector<double> precalc;
 
   apply_symmetry_conditions(imat, coords);
 
+  // if we have too few entries left in the matrix abort
   if (coords.size()/2 < dos.size()) {
     return false;
   }
@@ -79,53 +87,75 @@ bool rhab::calculate_dos_minimization(matrix_int_t imat, matrix_double_t &dmat, 
     hist[i] = sum(row(imat,i));
   }
 
-  size_t num_states = dos.size();
+  // we keep the state with the highest energy fixed
+  // and thus do minimization only on N-1 states
+  size_t num_states = dos.size()-1;
 
-  {
-    gsl_vector *ss, *x;
-    gsl_multimin_function minex_func;
+  // Precalculate variables
+  sigma.resize(coords.size()/2);
+  precalc.resize(coords.size()/2);
 
-    params_t params(&imat, &dmat, &hist, &coords);
+  for (size_t k = 0; k < coords.size(); k+=2) {
+    const size_t &i = coords[k];
+    const size_t &j = coords[k+1];
 
-    minex_func.n = num_states;
-    minex_func.f = variance_function;
-    minex_func.params = &params;
+    precalc[k/2] = log(dmat(i,j) / dmat(j,i));
+    sigma[k/2]   = 1./imat(i,j) + 1./hist[i] + 1./imat(j,i) + 1./hist[j];
+  }
 
-    /* Starting point */
-    x = gsl_vector_alloc(num_states);
-    gsl_vector_set_all(x,  1.0);
+  // setup the minimization function and fminimizer
+  gsl_vector *ss, *x;
+  gsl_multimin_function minex_func;
 
-    /* Set initial step sizes to 1 */
-    ss = gsl_vector_alloc(num_states);
-    gsl_vector_set_all(ss, 1.0);
+  params_t params(&coords, &sigma, &precalc);
 
-    gsl_multimin_fminimizer *s = NULL;
-    s = gsl_multimin_fminimizer_alloc(gsl_multimin_fminimizer_nmsimplex2, dos.size());
-    gsl_multimin_fminimizer_set(s, &minex_func, x, ss);
-    int status;
-    size_t iter = 0;
+  minex_func.n = num_states;
+  minex_func.f = variance_function;
+  minex_func.params = &params;
 
-    do {
-      iter++;
-      status = gsl_multimin_fminimizer_iterate(s);
+  // Starting point
+  x = gsl_vector_alloc(num_states);
+  gsl_vector_set_all(x,  1.0);
 
-      if (status) {
-        break;
-      }
+  // Set initial step sizes to 1
+  ss = gsl_vector_alloc(num_states);
+  gsl_vector_set_all(ss, 1.0);
 
-      double size = gsl_multimin_fminimizer_size(s);
-      status = gsl_multimin_test_size(size, 1e-2);
-    } while(status == GSL_CONTINUE && iter < 10000);
+  gsl_multimin_fminimizer *s = NULL;
+  s = gsl_multimin_fminimizer_alloc(gsl_multimin_fminimizer_nmsimplex2, num_states);
+  gsl_multimin_fminimizer_set(s, &minex_func, x, ss);
+  int status;
+  size_t iter = 0;
+  double size;
 
-    gsl_multimin_fminimizer_free(s);
+  do {
+    iter++;
+    status = gsl_multimin_fminimizer_iterate(s);
 
-    for (size_t i = 0; i < dos.size(); i++) {
-      dos[i] = gsl_vector_get(x, i);
+    if (status) {
+      break;
     }
 
-    gsl_vector_free(x);
-    gsl_vector_free(ss);
+    size = gsl_multimin_fminimizer_size(s);
+    status = gsl_multimin_test_size(size, 1e-6);
+    //std::cout << iter << " " << size << " " << status << std::endl;
+  } while(status == GSL_CONTINUE /* && iter < 1000000*/);
+
+  std::cout << iter << " " << size;
+
+  for (size_t i = 0; i < s->x->size; i++) {
+    dos[i] = gsl_vector_get(s->x, i);
   }
+  dos[dos.size()-1] = 1;
+
+  for (size_t i = 0; i < dos.size(); i++) {
+    std::cout << " " << dos[i];
+  }
+  std::cout << std::endl;
+
+  gsl_multimin_fminimizer_free(s);
+  gsl_vector_free(x);
+  gsl_vector_free(ss);
 
 
   return true;
@@ -458,6 +488,7 @@ rhab::calculate_error_q(const vector_double_t &exact, const matrix_double_t &Qex
 
   // Least Squares
   bool lq = calculate_dos_leastsquares(Q, Qd, dos);
+  //bool lq = calculate_dos_minimization(Q, Qd, dos);
   double error_lsq = calculate_error(exact, dos, error_matrices.get<0>(), index, true);
 
   // Least Squares uses Qd as workspace only, so compute Qd
