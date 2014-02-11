@@ -370,7 +370,13 @@ double rhab::calculate_error(const vector_double_t &exact,
      *        i.e. additionally dos[i]-log(exact[i])/log(exact[i])
      */
     double norm = 0;
-    double max  = *(std::max_element(dos.begin(), dos.end()));
+    double max  = std::numeric_limits<double>::min();
+
+    for (size_t i = 0; i < dos.size(); i++) {
+      if (exact[i] > 0 && dos[i] > max) {
+        max = dos[i];
+      }
+    }
 
     // calculate the norm
     for (size_t i = 0; i < dos.size(); i++) {
