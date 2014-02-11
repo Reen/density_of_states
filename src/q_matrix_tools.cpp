@@ -380,7 +380,13 @@ double rhab::calculate_error(const vector_double_t &exact,
 
     // calculate the norm
     for (size_t i = 0; i < dos.size(); i++) {
-      norm += exp(dos[i]-max);
+      // Be careful here! The least squares and minimization algorithms
+      // tend to calculate very large values for states that have never been
+      // visited. Having a very large max value results in the exp(foo-max)
+      // to become 0
+      if ((exact[i]) > 0) {
+        norm += exp(dos[i]-max);
+      }
 #ifdef DEBUG
       if (!boost::math::isfinite(norm) || !boost::math::isfinite(dos[i])) {
         std::cerr << __FILE__ << ":" << __LINE__ << " "
