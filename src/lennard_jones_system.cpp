@@ -34,7 +34,7 @@ void LennardJonesSystem::set_particles(size_t N) {
     }
   }
 
-  ran_particle.param(boost::uniform_smallint<size_t>::param_type(0,N-1));
+  ran_particle = boost::uniform_smallint<size_t>(0, N-1);
 }
 
 double calculate_distance(const boost::array<double, 3> &a, const boost::array<double, 3> &b) {
