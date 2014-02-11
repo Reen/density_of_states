@@ -166,7 +166,6 @@ bool rhab::calculate_dos_leastsquares(matrix_int_t imat, matrix_double_t &dmat, 
 
   // coordinates of entries in the matrix stored one after another i1,j1,i2,j2,...
   std::vector<size_t> coords;
-  //size_t hist_count = 0;
 
   apply_symmetry_conditions(imat, coords);
 
@@ -194,8 +193,6 @@ bool rhab::calculate_dos_leastsquares(matrix_int_t imat, matrix_double_t &dmat, 
   for (int k = 0; k < 2*xn; k+=2) {
     const size_t &i = coords[k];
     const size_t &j = coords[k+1];
-    //hx[] = (p[i]-p[j]+log( (*ld->dmat)(i,j) / (*ld->dmat)(j,i) ))/sqrt(1./ (*ld->hist)[i] + 1./ (*ld->hist)[j] + 1./ (*ld->imat)(j,i) + 1./ (*ld->imat)(i,j));
-    //std::cout << i << " " << j << hist[i] << " " << hist[j] << " " << imat(j,i) << " " << imat(i,j) << " " << dmat(j,i) << " " << dmat(i,j)  << std::endl;
     gsl_matrix_set(X, k/2, i,  1.0/sqrt(1./hist[i] + 1./hist[j] + 1./imat(j,i) + 1./imat(i,j)));
     gsl_matrix_set(X, k/2, j, -1.0/sqrt(1./hist[i] + 1./hist[j] + 1./imat(j,i) + 1./imat(i,j)));
     gsl_vector_set(y, k/2, -log( dmat(i,j) / dmat(j,i) )/sqrt(1./hist[i] + 1./hist[j] + 1./imat(j,i) + 1./imat(i,j)));
