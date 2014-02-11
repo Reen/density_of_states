@@ -487,6 +487,9 @@ rhab::calculate_error_q(const vector_double_t &exact, const matrix_double_t &Qex
   bool lq = calculate_dos_leastsquares(Q, Qd, dos);
   //bool lq = calculate_dos_minimization(Q, Qd, dos);
   double error_lsq = calculate_error(exact, dos, error_matrices.get<0>(), index, true);
+  if (!boost::math::isfinite(error_lsq)) {
+    lq = false;
+  }
 
   // Least Squares uses Qd as workspace only, so compute Qd
   normalize_q(Q, Qd);
