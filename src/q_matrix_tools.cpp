@@ -18,6 +18,27 @@ typedef boost::tuple<const matrix_int_t*,
                      const std::vector<size_t>*
                      > params_t;
 
+/**
+ * Apply symmetry condition.
+ *
+ * We can only use pairs of T(i->j) and T(j->i) for the equation system.
+ */
+void apply_symmetry_conditions(matrix_int_t &imat, std::vector<size_t> &coords) {
+  for (size_t i = 0; i < imat.size1(); i++) {
+    for (size_t j = 0; j < imat.size2(); ++j) {
+      if (i==j) {
+        continue;
+      }
+      if (imat(i,j) > 0 && imat(j,i) > 0) {
+        coords.push_back(i);
+        coords.push_back(j);
+        continue;
+      }
+      imat(i,j) = imat(j,i) = 0;
+    }
+  }
+}
+
 double variance_function(const gsl_vector * x, void * params) {
   params_t* p = (params_t*)params;
   const matrix_int_t*        imat   = boost::get<0>(*p);
@@ -46,24 +67,7 @@ bool rhab::calculate_dos_minimization(matrix_int_t imat, matrix_double_t &dmat, 
   // coordinates of entries in the matrix stored one after another i1,j1,i2,j2,...
   std::vector<size_t> coords;
 
-  /**
-   * Apply symmetry condition.
-   *
-   * We can only use pairs of T(i->j) and T(j->i) for the equation system.
-   */
-  for (size_t i = 0; i < imat.size1(); i++) {
-    for (size_t j = 0; j < imat.size2(); ++j) {
-      if (i==j) {
-        continue;
-      }
-      if (imat(i,j) > 0 && imat(j,i) > 0) {
-        coords.push_back(i);
-        coords.push_back(j);
-        continue;
-      }
-      imat(i,j) = imat(j,i) = 0;
-    }
-  }
+  apply_symmetry_conditions(imat, coords);
 
   if (coords.size()/2 < dos.size()) {
     return false;
@@ -134,23 +138,7 @@ bool rhab::calculate_dos_leastsquares(matrix_int_t imat, matrix_double_t &dmat, 
   std::vector<size_t> coords;
   //size_t hist_count = 0;
 
-  /**
-   * Apply symmetry condition.
-   *
-   * We can only use pairs of T(i->j) and T(j->i) for the equation system.
-   */
-  for (size_t i = 0; i < imat.size1(); i++) {
-    for (size_t j = 0; j < imat.size2(); ++j)
-    {
-      if (i==j) continue;
-      if (imat(i,j) > 0 && imat(j,i) > 0) {
-        coords.push_back(i);
-        coords.push_back(j);
-        continue;
-      }
-      imat(i,j) = imat(j,i) = 0;
-    }
-  }
+  apply_symmetry_conditions(imat, coords);
 
   if (coords.size()/2 < dos.size()) {
     return false;
