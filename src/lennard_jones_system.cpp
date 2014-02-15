@@ -17,6 +17,10 @@ namespace po = boost::program_options;
  * Private Methods:
  */
 
+void LennardJonesSystem::set_size(double s) {
+  size_half = s/2;
+}
+
 void LennardJonesSystem::set_bins(size_t nb) {
   n_bins = nb;
   Q.resize(n_bins, n_bins);
@@ -119,11 +123,11 @@ po::options_description LennardJonesSystem::get_program_options() {
   desc.add_options()
     (
       "lj-size",
-      po::value<double>(&size)->default_value(5),
+      po::value<double>(&size)->default_value(5)->notifier(boost::bind(&LennardJonesSystem::set_size, this, _1)),
       "Box length"
     ) (
       "lj-num-particles",
-      po::value<size_t>(&num_particles)->default_value(2)->notifier(boost::bind(&LennardJonesSystem::set_particles, this, _1)),
+      po::value<size_t>(&num_particles)->default_value(2),
       "Number of particles"
     ) (
       "lj-bins",
@@ -183,9 +187,12 @@ void LennardJonesSystem::setup() {
   // precalculate constants
   sigma6           = sigma*sigma*sigma*sigma*sigma*sigma;
   four_epsilon     = 4*epsilon;
+  cutoff_radius    = (cutoff_radius < 0 ? size / 2 : cutoff_radius);
   cutoff_radius_sq = cutoff_radius*cutoff_radius;
 
   box_dimensions[0] = box_dimensions[1] = box_dimensions[2] = size;
+
+  set_particles(num_particles);
 }
 
 bool LennardJonesSystem::run() {

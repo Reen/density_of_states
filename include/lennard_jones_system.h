@@ -21,7 +21,7 @@
 
 #include "simulation_system.h"
 #include "q_matrix_tools.h"
-#include "rhab/pbc.h"
+//#include "rhab/pbc.h"
 
 
 using namespace rhab;
@@ -65,6 +65,9 @@ private:
   // cutoff squared
   double cutoff_radius_sq;
 
+  // size divied by 2
+  double size_half;
+
   // dimensions of the box
   boost::array<double, 3> box_dimensions;
 
@@ -88,16 +91,22 @@ private:
   double e_min;
   double e_max;
 
+  void set_size(double size);
   void set_bins(size_t n_bins);
   void set_particles(size_t num_particles);
 
   double calculate_dist_sq(const boost::array<double, 3> &a, const boost::array<double, 3> &b) {
-    double r = 0;
+    double rsq = 0;
     for (size_t i = 0; i < a.size(); ++i) {
       double tmp = a[i] - b[i];
-      r += tmp*tmp;
+      if (tmp > size_half) {
+        tmp -= size;
+      } else if (tmp < -size_half) {
+        tmp += size;
+      }
+      rsq += tmp*tmp;
     }
-    return r;
+    return rsq;
   }
 
   double calculate_energy() {
@@ -111,13 +120,42 @@ private:
     return energy;
   }
 
+  double calculate_energy_change(const size_t &atom,
+                                 const u_sphere_dist_t::result_type &offset) {
+    double dE = 0;
+    boost::array<double, 3> pos_new(particles[atom]);
+    for (size_t d = 0; d < 3; d++) {
+      pos_new[d] += offset[d];
+    }
+    for (size_t i = 0; i < particles.size(); i++) {
+      if (i == atom) {
+        continue;
+      }
+      double rsq = calculate_dist_sq(particles[i], particles[atom]);
+      //std::cout << "rsq1: " << rsq << std::endl;
+      if (rsq < cutoff_radius_sq) {
+        dE -= calculate_lj_interaction_rsq(rsq);
+      }
+      rsq = calculate_dist_sq(particles[i], pos_new);
+      //std::cout << "rsq2: " << rsq << std::endl;
+      if (rsq < cutoff_radius_sq) {
+        dE += calculate_lj_interaction_rsq(rsq);
+      }
+    }
+    return dE;
+  }
+
   double calculate_lj_interaction(const double &r) {
     return calculate_lj_interaction_rsq(r*r);
   }
 
   double calculate_lj_interaction_rsq(const double &r2) {
-    double r6 = r2*r2*r2;
-    return four_epsilon * sigma6/r6 * (sigma6/r6 - 1);
+    if (r2 > cutoff_radius_sq) {
+      return 0.0;
+    }
+    double r6 = sigma6/(r2*r2*r2);
+    //std::cout << "L" << __LINE__ << " " << r2 << " " << cutoff_radius_sq << " " << sigma6 << " " << four_epsilon << std::endl;
+    return four_epsilon * r6 * (r6 - 1.0);
   }
 
   template<class Sampler>
@@ -135,15 +173,17 @@ private:
       for (size_t step = 1; step <= steps; step++) {
         // select a particle at random
         size_t i = ran_particle(rng.rng);
+        //std::cout << "selected particle: " << i << std::endl;
 
         // offset
         u_sphere_dist_t::result_type offset = delta_r * u_sphere_dist(rng.rng);
+        //std::cout << "offset: " << offset[0] << " " << offset[1] << " " << offset[2] << std::endl;
 
         // calculate change in energy
-        int dE = particles[i];
+        double dE = calculate_energy_change(i, offset);
 
-        int Ei = (energy-e_min) / 4;
-        int Ej = (energy-e_min+dE) / 4;
+        int Ei = n_bins*(energy-e_min)/(e_max-e_min);
+        int Ej = n_bins*(energy-e_min+dE)/(e_max-e_min);
 
         bool out_of_bounds = false;
         // update Q matrix
@@ -154,6 +194,10 @@ private:
         } else {
           Q(Ei, Ej)++;
         }
+        std::cout << "L" << __LINE__ << " " << Ei << " " << Ej
+                  << " " << energy << " " << dE
+                  << " " << out_of_bounds
+                  << std::endl;
 
         if (!out_of_bounds && sampler(dE, Ei, Ej)) {
           //lattice(i, j) *= -1;
