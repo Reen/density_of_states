@@ -51,7 +51,7 @@ void Simulation::parse_arguments(int argc, char *argv[]) {
 		) (
 			"system",
 			po::value<std::string>(&system)->default_value("Ising"),
-			"System to run"
+			"System to run, choose:\nIsing\nToyDos\nLJones"
 		) (
 			"sampler",
 			po::value<size_t>()->default_value(1),
