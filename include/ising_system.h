@@ -125,13 +125,14 @@ private:
 					if (suc_power) {
 						error_acc[index].err3(err_power);
 					}
+
 					if (sampler.has_own_statistics()) {
 						double err = sampler.calculate_error(dos_exact_norm, error_matrices, index);
 						error_acc[index].err4(err);
 					}
 
 					// we only capture the parameter for the first run
-					if (sampler.has_own_statistics() && run == 0) {
+					if (sampler.has_parameter() && run == 0) {
 						double param(0.0);
 						sampler.get_parameter(param);
 						error_acc[index].wl_f = param;

@@ -28,6 +28,10 @@ public:
 
 	void check(const size_t & /*step*/, const size_t & /*run*/) {}
 
+	bool has_parameter() {
+		return false;
+	}
+
 	bool has_own_statistics() {
 		return false;
 	}
@@ -92,6 +96,14 @@ public:
 		default:
 			break;
 		}
+	}
+
+	bool has_parameter() const {
+		return true;
+	}
+
+	void get_parameter(double& param) const {
+		param = -1./beta/kB;
 	}
 };
 
@@ -181,6 +193,10 @@ public:
 					  << std::setw(15) << std::right << ln_f << "\n";
 #endif
 		}
+	}
+
+	bool has_parameter() const {
+		return true;
 	}
 
 	bool has_own_statistics() {

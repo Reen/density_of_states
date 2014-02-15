@@ -117,7 +117,7 @@ private:
 					}
 
 					// we only capture the parameter for the first run
-					if (sampler.has_own_statistics() && run == 0) {
+					if (sampler.has_parameter() && run == 0) {
 						double param(0.0);
 						sampler.get_parameter(param);
 						error_acc[index].wl_f = param;
