@@ -166,6 +166,8 @@ bool rhab::calculate_dos_leastsquares(matrix_int_t imat, matrix_double_t &dmat, 
 
   // coordinates of entries in the matrix stored one after another i1,j1,i2,j2,...
   std::vector<size_t> coords;
+  std::vector<size_t> pivot(imat.size1());
+  size_t cnt_nnz = 0;
 
   apply_symmetry_conditions(imat, coords);
 
@@ -176,7 +178,11 @@ bool rhab::calculate_dos_leastsquares(matrix_int_t imat, matrix_double_t &dmat, 
   normalize_q(imat, dmat);
 
   for (size_t i = 0; i < imat.size1(); i++) {
-    hist[i] = sum(row(imat,i));
+    hist[cnt_nnz] = sum(row(imat,i));
+    if (hist[cnt_nnz] > 0) {
+      pivot[i] = cnt_nnz;
+      cnt_nnz ++;
+    }
   }
 
   int xn = coords.size()/2;
@@ -185,27 +191,27 @@ bool rhab::calculate_dos_leastsquares(matrix_int_t imat, matrix_double_t &dmat, 
   gsl_vector *y, *c;
   double chisq;
 
-  X = gsl_matrix_calloc(xn, dos.size());
+  X = gsl_matrix_calloc(xn, cnt_nnz);
   y = gsl_vector_calloc(xn);
-  c = gsl_vector_calloc(dos.size());
-  cov = gsl_matrix_calloc(dos.size(), dos.size());
+  c = gsl_vector_calloc(cnt_nnz);
+  cov = gsl_matrix_calloc(cnt_nnz, cnt_nnz);
 
   for (int k = 0; k < 2*xn; k+=2) {
     const size_t &i = coords[k];
     const size_t &j = coords[k+1];
-    gsl_matrix_set(X, k/2, i,  1.0/sqrt(1./hist[i] + 1./hist[j] + 1./imat(j,i) + 1./imat(i,j)));
-    gsl_matrix_set(X, k/2, j, -1.0/sqrt(1./hist[i] + 1./hist[j] + 1./imat(j,i) + 1./imat(i,j)));
-    gsl_vector_set(y, k/2, -log( dmat(i,j) / dmat(j,i) )/sqrt(1./hist[i] + 1./hist[j] + 1./imat(j,i) + 1./imat(i,j)));
+    gsl_matrix_set(X, k/2, pivot[i],  1.0/sqrt(1./hist[pivot[i]] + 1./hist[pivot[j]] + 1./imat(j,i) + 1./imat(i,j)));
+    gsl_matrix_set(X, k/2, pivot[j], -1.0/sqrt(1./hist[pivot[i]] + 1./hist[pivot[j]] + 1./imat(j,i) + 1./imat(i,j)));
+    gsl_vector_set(y, k/2, -log( dmat(i,j) / dmat(j,i) )/sqrt(1./hist[pivot[i]] + 1./hist[pivot[j]] + 1./imat(j,i) + 1./imat(i,j)));
   }
 
   {
-    gsl_multifit_linear_workspace * work = gsl_multifit_linear_alloc(xn, dos.size());
+    gsl_multifit_linear_workspace * work = gsl_multifit_linear_alloc(xn, cnt_nnz);
     gsl_multifit_linear(X,y,c,cov,&chisq, work);
     gsl_multifit_linear_free(work);
   }
 
   for (size_t i = 0; i < dos.size(); i++) {
-    dos[i] = gsl_vector_get(c, i);
+    dos[i] = gsl_vector_get(c, pivot[i]);
   }
 
   gsl_matrix_free(X);
