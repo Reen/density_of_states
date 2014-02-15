@@ -84,18 +84,33 @@ public:
 		switch(schedule) {
 		// Linear Schedule
 		case 1:
-			Tcur = (0.1-T)/steps*step+T;
-			beta = -1./(kB * Tcur);
+			Tcur = T - ((T-0.1)/steps)*step;
 			break;
 		// Sine Schedule
 		case 2:
-			Tcur = T*(sin(step/(steps/100))+1.0);
-			beta = -1./(kB * Tcur);
+			Tcur = T*(sin(step/(steps/100))+1.0)/2.;
+			break;
+		// Log-periodic Sine Schedule
+		case 3:
+			Tcur = T*(sin(log(step)*5)+1.0)/2.;
+			break;
+		// exponential schedule
+		case 4:
+			Tcur = T*pow(0.99999999,step);
+			break;
+		// power law
+		case 5:
+			Tcur = T*10*pow(step, -0.39);
+			break;
+		// log schedule
+		case 6:
+			Tcur = T/log(step);
 			break;
 		case 0:
 		default:
-			break;
+			return;
 		}
+		beta = -1./(kB * Tcur);
 	}
 
 	bool has_parameter() const {
