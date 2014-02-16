@@ -95,7 +95,7 @@ public:
   }
 };
 
-}; // namespace rhab
+} // namespace rhab
 
 #endif /* end of include guard: PBC_H_IDBQB80S */
 
