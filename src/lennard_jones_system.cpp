@@ -105,6 +105,8 @@ void LennardJonesSystem::setup_output() {
   out << "\n# temperature:  " << boost::any_cast<double>(settings["temperature"]);
   out << "\n# flatness:     " << boost::any_cast<double>(settings["flatness"]);
   out << "\n# one-over-t-c: " << boost::any_cast<double>(settings["one-over-t-c"]);
+  out << "\n# e_min:        " << e_min;
+  out << "\n# e_max:        " << e_max;
   out << "\n#" << std::endl;
 }
 

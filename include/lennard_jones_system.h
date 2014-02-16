@@ -21,7 +21,7 @@
 
 #include "simulation_system.h"
 #include "q_matrix_tools.h"
-//#include "rhab/pbc.h"
+#include "rhab/pbc.h"
 
 
 using namespace rhab;
@@ -121,9 +121,9 @@ private:
   }
 
   double calculate_energy_change(const size_t &atom,
-                                 const u_sphere_dist_t::result_type &offset) {
+                                 const u_sphere_dist_t::result_type &offset,
+                                 boost::array<double, 3> &pos_new) {
     double dE = 0;
-    boost::array<double, 3> pos_new(particles[atom]);
     for (size_t d = 0; d < 3; d++) {
       pos_new[d] += offset[d];
     }
@@ -133,14 +133,10 @@ private:
       }
       double rsq = calculate_dist_sq(particles[i], particles[atom]);
       //std::cout << "rsq1: " << rsq << std::endl;
-      if (rsq < cutoff_radius_sq) {
-        dE -= calculate_lj_interaction_rsq(rsq);
-      }
+      dE -= calculate_lj_interaction_rsq(rsq);
       rsq = calculate_dist_sq(particles[i], pos_new);
       //std::cout << "rsq2: " << rsq << std::endl;
-      if (rsq < cutoff_radius_sq) {
-        dE += calculate_lj_interaction_rsq(rsq);
-      }
+      dE += calculate_lj_interaction_rsq(rsq);
     }
     return dE;
   }
@@ -169,6 +165,8 @@ private:
       double energy = calculate_energy();
       //int i, j;
 
+      boost::array<double, 3> pos_new;
+
       Sampler sampler(rng.rng, Q, settings);
       for (size_t step = 1; step <= steps; step++) {
         // select a particle at random
@@ -177,10 +175,18 @@ private:
 
         // offset
         u_sphere_dist_t::result_type offset = delta_r * u_sphere_dist(rng.rng);
+        pos_new = particles[i];
         //std::cout << "offset: " << offset[0] << " " << offset[1] << " " << offset[2] << std::endl;
 
+#ifdef DEBUG
+        if (fabs(energy - calculate_energy()) > 1e-10) {
+          std::cout << "Energie differs by: " << fabs(energy - calculate_energy()) << std::endl;
+          assert(false);
+        }
+#endif
+
         // calculate change in energy
-        double dE = calculate_energy_change(i, offset);
+        double dE = calculate_energy_change(i, offset, pos_new);
 
         int Ei = n_bins*(energy-e_min)/(e_max-e_min);
         int Ej = n_bins*(energy-e_min+dE)/(e_max-e_min);
@@ -194,13 +200,10 @@ private:
         } else {
           Q(Ei, Ej)++;
         }
-        std::cout << "L" << __LINE__ << " " << Ei << " " << Ej
-                  << " " << energy << " " << dE
-                  << " " << out_of_bounds
-                  << std::endl;
 
         if (!out_of_bounds && sampler(dE, Ei, Ej)) {
           //lattice(i, j) *= -1;
+          particles[i] = rhab::PBC::position(pos_new, box_dimensions);
           energy += dE;
         }
         if (step % error_check_freq == 0) {
