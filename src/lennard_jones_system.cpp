@@ -1,6 +1,6 @@
 #include "lennard_jones_system.h"
 #include "mc_sampler.h"
-
+#include "rhab/exact_dos.h"
 // C++ Standard Library
 #include <iomanip>
 
@@ -41,13 +41,23 @@ void LennardJonesSystem::set_particles(size_t N) {
   ran_particle = boost::uniform_smallint<size_t>(0, N-1);
 }
 
-double calculate_distance(const boost::array<double, 3> &a, const boost::array<double, 3> &b) {
-  double r = 0;
-  for (size_t i = 0; i < a.size(); ++i) {
-    double tmp = a[i] - b[i];
-    r += tmp*tmp;
+void LennardJonesSystem::calculate_dos_exact_norm() {
+  dos_exact_norm.resize(n_bins);
+  double bin_width = (e_max-e_min)/n_bins;
+  double e_start = e_min + bin_width/2;
+  ExactDos<double> exact_dos(epsilon, sigma, size);
+
+  double sum = 0;
+
+  for (size_t i = 0; i < n_bins; i++) {
+    double energy = e_start + i*bin_width;
+    dos_exact_norm[i] = exact_dos(energy);
+    if (i == 25) {
+      dos_exact_norm[i] = 0;
+    }
+    sum += dos_exact_norm[i];
   }
-  return sqrt(r);
+  dos_exact_norm /= sum;
 }
 
 void LennardJonesSystem::setup_output() {
@@ -195,6 +205,7 @@ void LennardJonesSystem::setup() {
   box_dimensions[0] = box_dimensions[1] = box_dimensions[2] = size;
 
   set_particles(num_particles);
+  calculate_dos_exact_norm();
 }
 
 bool LennardJonesSystem::run() {

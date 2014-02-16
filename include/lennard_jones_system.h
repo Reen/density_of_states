@@ -94,6 +94,7 @@ private:
   void set_size(double size);
   void set_bins(size_t n_bins);
   void set_particles(size_t num_particles);
+  void calculate_dos_exact_norm();
 
   double calculate_dist_sq(const boost::array<double, 3> &a, const boost::array<double, 3> &b) {
     double rsq = 0;
