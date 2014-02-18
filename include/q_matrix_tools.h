@@ -63,13 +63,6 @@ calculate_error_q(const vector_double_t &exact, const matrix_double_t &Qexact,
  */
 double calculate_error(const vector_double_t &exact,
                        const vector_double_t &dos,
-                       bool normalize = false);
-
-/**
- * calculate_error
- */
-double calculate_error(const vector_double_t &exact,
-                       const vector_double_t &dos,
                        error_mat_t* error_per_bin, const size_t& index,
                        bool normalize = false);
 }

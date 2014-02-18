@@ -310,68 +310,6 @@ bool rhab::calculate_dos_power(const matrix_double_t &imat, vector_double_t &t1)
 }
 
 
-double rhab::calculate_error(const vector_double_t &exact, const vector_double_t &dos, bool normalize) {
-  if (dos.size() == 0 || exact.size() == 0) {
-    std::cerr << "exact or calculated density of states vector has zero length!" << std::endl;
-    return -1;
-  }
-  vector_double_t::const_iterator i1 = dos.begin();
-  vector_double_t::const_iterator i2 = exact.begin();
-  double sum = 0.0;
-  size_t cnt = 0;
-  if (normalize) {
-    /**
-     * Density of states provided in dos is actually \f$\ln(\Omega)\f$.
-     * Find the largest value, then subtract it from dos[i]
-     * and sum exp(dos[i] - max) to calculate the norm.
-     * Then divide the every exp(dos[i] - max) by the norm
-     * and subtract the exact value, i.e. exact[i].
-     * Calculate the absolute value of it and divide by exact[i].
-     *
-     * exact[i] is assumed to be positive
-     */
-    double norm = 0;
-    double max  = *(std::max_element(dos.begin(), dos.end()));
-    for (; i1 != dos.end(); i1++) {
-      norm += exp(*i1-max);
-#ifdef DEBUG
-      if (!boost::math::isfinite(norm) || !boost::math::isfinite(*i1)) {
-        std::cerr << __FILE__ << ":" << __LINE__ << " " << norm << " " << *i1 << std::endl;
-      }
-#endif
-    }
-    i1 = dos.begin();
-    for (; i1 != dos.end(); i1++, i2++) {
-      // Be careful here and do not devide by 0
-      if ((*i2) > 0) {
-        sum += fabs((exp(*i1-max)/norm - *i2) / (*i2));
-        cnt ++;
-      }
-#ifdef DEBUG
-      if (!boost::math::isfinite(sum) || !boost::math::isfinite(*i2)) {
-        std::cerr << __FILE__ << ":" << __LINE__ << " " << sum << " " << norm << " " << *i1 <<  " " << *i2 << std::endl;
-      }
-#endif
-    }
-    //std::cout << dos << std::endl;
-    //std::cout << std::setprecision(22) << norm << " " << sum << " " << dos << " " << norm << std::endl;
-  } else {
-    for (; i1 != dos.end(); i1++, i2++) {
-      // Be careful here and do not divide by 0
-      if ((*i2) > 0) {
-        sum += fabs((*i1 - *i2) / (*i2));
-        cnt ++;
-      }
-#ifdef DEBUG
-      if (!boost::math::isfinite(sum) || !boost::math::isfinite(*i1) || !boost::math::isfinite(*i2)) {
-        std::cerr << __FILE__ << ":" << __LINE__ << " " << sum << " " << *i1 << " " << *i2 << std::endl;
-      }
-#endif
-    }
-  }
-  return (sum / cnt);
-}
-
 double rhab::calculate_error(const vector_double_t &exact,
                              const vector_double_t &dos,
                              error_mat_t* error_per_bin,
