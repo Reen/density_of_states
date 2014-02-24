@@ -136,7 +136,7 @@ private:
 			if (run+1 == index2) {
 				std::ostringstream add;
 				add << "# last Q/Qd matrix:\n# " << Q << "\n# " << Qd << std::endl;
-				write_output(run, add.str());
+				write_output(run+1, add.str());
 				index2 *= 10;
 			}
 		}
