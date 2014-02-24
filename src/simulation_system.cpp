@@ -4,6 +4,9 @@
 #include <sstream>
 #include <iomanip>
 
+// Boost Format
+#include <boost/format.hpp>
+
 SimulationSystem::SimulationSystem(settings_t &s)
 	: settings(s), error_matrices(&error_per_bin_lsq, &error_per_bin_gth, &error_per_bin_pow, &error_per_bin_wl) {}
 
@@ -47,61 +50,62 @@ void SimulationSystem::setup() {
 	}
 }
 
-void SimulationSystem::open_output_files(const std::string& fn) {
-	open_output_file(out,     fn);
-	open_output_file(out_lsq, fn + ".lsq");
-	open_output_file(out_gth, fn + ".gth");
-	open_output_file(out_pow, fn + ".pow");
-
-	size_t sampler = boost::any_cast<size_t>(settings["sampler"]);
-	if (sampler == 1 || sampler == 5) {
-		open_output_file(out_wl,  fn + ".wl");
-	}
-}
-
 void SimulationSystem::open_output_file(std::ofstream &o, const std::string & fn) {
 	o.open(fn.c_str());
 	if (!o.good()) {
 		throw std::runtime_error("Error: could not open output file '" + fn + "'");
 	}
+	write_header(o);
 }
 
-void SimulationSystem::write_header() {
-	std::ostringstream oss;
-	oss << "# Version: " << VERSION_MAJOR << "." << VERSION_MINOR << std::endl;
-	oss << "# git SHA: " << g_GIT_SHA1 << std::endl;
-	oss << "# cmdline: " << boost::any_cast<std::string>(settings["cmdline"]) << std::endl;
-	oss << "# seed: "    << boost::any_cast<size_t>(settings["seed"]) << std::endl;
+void SimulationSystem::write_header(std::ofstream& out) {
+	out << "# Version: " << VERSION_MAJOR << "." << VERSION_MINOR << std::endl;
+	out << "# git SHA: " << g_GIT_SHA1 << std::endl;
+	out << "# cmdline: " << boost::any_cast<std::string>(settings["cmdline"]) << std::endl;
+	out << "# seed: "    << boost::any_cast<size_t>(settings["seed"]) << std::endl;
 
-	out     << oss.str();
-	out_lsq << oss.str();
-	out_gth << oss.str();
-	out_pow << oss.str();
-
-	size_t sampler = boost::any_cast<size_t>(settings["sampler"]);
-	if (sampler == 1 || sampler == 5) {
-		out_wl  << oss.str();
-	}
 }
 
 void write_per_bin_error_file(std::ofstream& out, error_mat_t& error_per_bin, const std::string& header) {
 	out << header;
 	for (size_t j = 0; j < error_per_bin.size2(); j++) {
-		//out << "# " << error_acc[i].step << " {";
 		out << std::setw(10) << j;
 		for (size_t i = 0; i < error_per_bin.size1(); i++) {
 			out << std::setw(12) << error_per_bin(i,j).mean();
-			//if (j != error_per_bin.size2()-1) {
-				//out << ", ";
-			//}
 		}
 		out << "\n";
-		//out << "}\n";
 	}
 
 }
 
-void SimulationSystem::write_output() {
+void SimulationSystem::write_output(size_t run, const std::string &add) {
+	boost::format fmt(fn_template);
+	std::string fn = str( fmt % run );
+	//
+	//! Output file descriptor for general output
+	std::ofstream out_main;
+
+	//! Output file descriptor for per-bin-errors from Least Squares Method
+	std::ofstream out_lsq;
+
+	//! Output file descriptor for per-bin-errors from GTH Method
+	std::ofstream out_gth;
+
+	//! Output file descriptor for per-bin-errors from Power Method
+	std::ofstream out_pow;
+
+	//! Output file descriptor for per-bin-errors from Wang Landau Method
+	std::ofstream out_wl;
+
+	open_output_file(out_main, fn);
+	open_output_file(out_lsq,  fn + ".lsq");
+	open_output_file(out_gth,  fn + ".gth");
+	open_output_file(out_pow,  fn + ".pow");
+
+	out_main << out.str();
+	out_main << "\n# runs:        " << run;
+	out_main << "\n#" << std::endl;
+
 	std::ostringstream oss;
 	oss << "# " << std::setw(8) << "bin";
 	for (size_t i = 0; i < error_acc.size(); i++) {
@@ -117,7 +121,7 @@ void SimulationSystem::write_output() {
 			17, 18, 19, 20, 21,
 			22, 23, 24, 25, 26,
 			27);
-	out << line;
+	out_main << line;
 	snprintf(line, 3000, "#%14s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s%15s\n", "time",
 			"mean_lq",    "var_lq",    "cnt_lq",    "min_lq",    "max_lq",
 			"mean_gth",   "var_gth",   "cnt_gth",   "min_gth",   "max_gth",
@@ -126,7 +130,7 @@ void SimulationSystem::write_output() {
 			"mean_q",     "var_q",     "cnt_q",     "min_q",     "max_q",
 			"wl_f"
 			);
-	out << line;
+	out_main << line;
 	for (size_t i = 0; i < error_acc.size(); i++) {
 		size_t time  = error_acc[i].step;
 		double mean_lq    = boost::accumulators::mean(error_acc[i].err1);
@@ -163,9 +167,11 @@ void SimulationSystem::write_output() {
 				mean_q,     var_q,     cnt_q,     min_q,     max_q,
 				error_acc[i].wl_f
 				);
-		out << line;
+		out_main << line;
 		oss << std::setw(12) << time;
 	}
+
+	out_main << add;
 
 	oss << "\n";
 	write_per_bin_error_file(out_lsq, error_per_bin_lsq, oss.str());

@@ -67,10 +67,10 @@ void ToyDosSystem::setup_output() {
 	fmt.exceptions(boost::io::all_error_bits ^ (
 				boost::io::too_many_args_bit | boost::io::too_few_args_bit
 				));
-	std::string buf = str( fmt
+	fn_template = str( fmt
 			% sampler_string[sampler]
 			% steps
-			% runs
+			% "%1%"
 			% n_bins
 			% connections
 			% boost::any_cast<double>(settings["temperature"])
@@ -80,21 +80,15 @@ void ToyDosSystem::setup_output() {
 			% boost::any_cast<size_t>(settings["schedule"])
 		);
 
-	open_output_files(buf);
-
-	write_header();
-
 	out << "#";
 	out << "\n# sampler:      " << sampler << " - " << sampler_string[sampler];
 	out << "\n# steps:        " << steps;
-	out << "\n# runs:         " << runs;
 	out << "\n# n_bins:       " << n_bins;
 	out << "\n# connections:  " << connections;
 	out << "\n# temperature:  " << boost::any_cast<double>(settings["temperature"]);
 	out << "\n# flatness:     " << boost::any_cast<double>(settings["flatness"]);
 	out << "\n# one-over-t-c: " << boost::any_cast<double>(settings["one-over-t-c"]);
 	out << "\n# one-over-t-s: " << boost::any_cast<size_t>(settings["one-over-t-s"]);
-	out << "\n#" << std::endl;
 }
 
 void ToyDosSystem::setup_variables() {
@@ -322,10 +316,6 @@ bool ToyDosSystem::run() {
 		std::cerr << "Error: unknown sampler" << std::endl;
 		return false;
 	}
-
-	write_output();
-
-	out << "# last Q/Qd matrix:\n# " << Q << "\n# " << Qd << std::endl;
 
 	return true;
 }

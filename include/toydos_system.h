@@ -79,12 +79,12 @@ private:
 			error_check_f = 100;
 			// start at random position
 			size_t state = select_pos(rng.rng);
-			Q *= 0;
-			//std::cout << "Q: " << Q << std::endl;
-			size_t step = 1;
 			size_t index = 0;
+			size_t index2 = 1;
+			// reset Q matrix
+			Q *= 0;
 			Sampler sampler(rng.rng, Q, settings);
-			for (; step <= steps; step++) {
+			for (size_t step = 1; step <= steps; step++) {
 				size_t new_state = mt(state, select_pos(rng.rng));
 				int Eold = config_to_energy[state];
 				int Enew = config_to_energy[new_state];
@@ -132,11 +132,13 @@ private:
 				}
 				sampler.check(step, run);
 			}
-			//std::cout << Q << std::endl;
-			//std::cout << Qd << std::endl;
-			//vector_double_t dos = calculate_dos_gth(Qd);
-			//final_errors.push_back(calculate_error(dos_exact_norm, dos));
-			//std::cout << run << " " << dos << " " << calculate_error(dos_exact_norm, dos) << " " << sampler.calculate_error(dos_exact_norm) << std::endl;
+
+			if (run+1 == index2) {
+				std::ostringstream add;
+				add << "# last Q/Qd matrix:\n# " << Q << "\n# " << Qd << std::endl;
+				write_output(run, add.str());
+				index2 *= 10;
+			}
 		}
 	}
 

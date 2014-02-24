@@ -63,6 +63,7 @@ private:
 			// variables for error / statistics calculation
 			size_t error_check_freq = error_check_f;
 			size_t index = 0;
+			size_t index2 = 1;
 			// reset Q matrix
 			Q *= 0;
 			int magnetization(0), energy(1);
@@ -145,10 +146,13 @@ private:
 				}
 				sampler.check(step, run);
 			}
-			//std::cout << Q << std::endl;
-			//std::cout << Qd << std::endl;
-			//std::cout << calculate_dos_power(Qd) << std::endl;
-			//std::cout << dos_exact_norm << std::endl;
+
+			if (run+1 == index2) {
+				std::ostringstream add;
+				add << "# last Q/Qd matrix:\n# " << Q << "\n# " << Qd << std::endl;
+				write_output(run, add.str());
+				index2 *= 10;
+			}
 		}
 	}
 

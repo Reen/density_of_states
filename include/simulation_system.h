@@ -32,21 +32,6 @@ protected:
 	//! Initial error check frequency
 	size_t error_check_f;
 
-	//! Output file descriptor for general output
-	std::ofstream out;
-
-	//! Output file descriptor for per-bin-errors from Least Squares Method
-	std::ofstream out_lsq;
-
-	//! Output file descriptor for per-bin-errors from GTH Method
-	std::ofstream out_gth;
-
-	//! Output file descriptor for per-bin-errors from Power Method
-	std::ofstream out_pow;
-
-	//! Output file descriptor for per-bin-errors from Wang Landau Method
-	std::ofstream out_wl;
-
 	//! Tag to be appended to output file names
 	std::string tag;
 
@@ -55,6 +40,12 @@ protected:
 
 	//! normalized transition matrix
 	matrix_double_t Qd;
+
+	//! template for filename
+	std::string fn_template;
+
+	//! string stream for header
+	std::ostringstream out;
 
 	//! error accumulator array
 	error_acc_t error_acc;
@@ -75,9 +66,8 @@ protected:
 	error_mat_tuple_t error_matrices;
 
 	virtual void setup_output() = 0;
-	void open_output_files(const std::string& fn);
 	void open_output_file(std::ofstream& o, const std::string& fn);
-	virtual void write_header();
+	virtual void write_header(std::ofstream& o);
 
 public:
 	SimulationSystem(settings_t &s);
@@ -86,7 +76,7 @@ public:
 	virtual void parse_arguments(boost::program_options::variables_map &vm) = 0;
 	virtual bool run() = 0;
 	virtual void setup();
-	virtual void write_output();
+	virtual void write_output(size_t run, const std::string &add);
 
 	SimulationRNG rng;
 
