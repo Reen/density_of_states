@@ -75,12 +75,12 @@ private:
 	template<class Sampler>
 	void mc_loop() {
 		boost::uniform_int<> select_pos(0,connections-1);
+		size_t index2 = 1;
 		for (size_t run = 0; run < runs; run++) {
 			error_check_f = 100;
 			// start at random position
 			size_t state = select_pos(rng.rng);
 			size_t index = 0;
-			size_t index2 = 1;
 			// reset Q matrix
 			Q *= 0;
 			Sampler sampler(rng.rng, Q, settings);

@@ -157,11 +157,11 @@ private:
 
   template<class Sampler>
   void mc_loop() {
+    size_t index2 = 1;
     for (size_t run = 0; run < runs; run++) {
       // variables for error / statistics calculation
       size_t error_check_freq = error_check_f;
       size_t index = 0;
-      size_t index2 = 1;
       // reset Q matrix
       Q *= 0;
       double energy = calculate_energy();
@@ -243,6 +243,7 @@ private:
         }
         sampler.check(step, run);
       }
+
       if (run+1 == index2) {
         std::ostringstream add;
         add << "# last Q/Qd matrix:\n# " << Q << "\n# " << Qd << std::endl;
