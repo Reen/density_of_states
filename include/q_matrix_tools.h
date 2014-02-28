@@ -59,6 +59,20 @@ calculate_error_q(const vector_double_t &exact, const matrix_double_t &Qexact,
                   error_mat_tuple_t error_matrices, const size_t& index);
 
 /**
+ * calculate_error_q_lj
+ *
+ * Error calculation for the LJ system.
+ */
+boost::tuple<double, double, double, bool,  bool,   bool>
+calculate_error_q_lj(const vector_double_t &exact,
+                     const matrix_int_t &Q, matrix_double_t &Qd,
+                     error_mat_tuple_t error_matrices,
+                     vector_double_t &dos_lsq,
+                     vector_double_t &dos_gth,
+                     vector_double_t &dos_pow,
+                     const size_t& index);
+
+/**
  * calculate_error
  */
 double calculate_error(const vector_double_t &exact,

@@ -161,6 +161,9 @@ private:
   template<class Sampler>
   void mc_loop() {
     size_t index2 = 1;
+    vector_double_t dos_lsq(Q.size1());
+    vector_double_t dos_gth(Q.size1());
+    vector_double_t dos_pow(Q.size1());
     for (size_t run = 0; run < runs; run++) {
       // variables for error / statistics calculation
       size_t error_check_freq = error_check_f;
@@ -214,19 +217,21 @@ private:
         if (step % error_check_freq == 0) {
           error_acc[index].step = step;
 
-          double err_lq, err_gth, err_power;
-          bool   suc_lq, suc_gth, suc_power;
-          double q_error;
-          boost::tie(err_lq, err_gth, err_power, suc_lq, suc_gth, suc_power, q_error) =
-            rhab::calculate_error_q(dos_exact_norm, matrix_double_t(), Q, Qd, error_matrices, index);
+          double err_lq, err_gth, err_pow;
+          bool   suc_lq, suc_gth, suc_pow;
+          boost::tie(
+              err_lq, err_gth, err_pow,
+              suc_lq, suc_gth, suc_pow) = rhab::calculate_error_q_lj(
+                dos_exact_norm, Q, Qd, error_matrices,
+                dos_lsq, dos_gth, dos_pow, index);
           if (suc_lq) {
             error_acc[index].err1(err_lq);
           }
           if (suc_gth) {
             error_acc[index].err2(err_gth);
           }
-          if (suc_power) {
-            error_acc[index].err3(err_power);
+          if (suc_pow) {
+            error_acc[index].err3(err_pow);
           }
           if (sampler.has_own_statistics()) {
             double err = sampler.calculate_error(dos_exact_norm, error_matrices, index);

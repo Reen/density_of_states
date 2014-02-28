@@ -460,4 +460,43 @@ rhab::calculate_error_q(const vector_double_t &exact, const matrix_double_t &Qex
   return boost::make_tuple(error_lsq, error_gth, error_pow, lq, gth, pow, q_error);
 }
 
+boost::tuple<double, double, double, bool,  bool,   bool>
+rhab::calculate_error_q_lj(const vector_double_t &exact,
+                           const matrix_int_t &Q, matrix_double_t &Qd,
+                           error_mat_tuple_t error_matrices,
+                           vector_double_t &dos_lsq,
+                           vector_double_t &dos_gth,
+                           vector_double_t &dos_pow,
+                           const size_t& index) {
+  std::fill(dos_lsq.begin(), dos_lsq.end(), 0.0);
+  std::fill(dos_gth.begin(), dos_gth.end(), 0.0);
+  std::fill(dos_pow.begin(), dos_pow.end(), 0.0);
+
+  // Least Squares
+  bool lq = calculate_dos_leastsquares(Q, Qd, dos_lsq);
+  //bool lq = calculate_dos_minimization(Q, Qd, dos_lsq);
+  double error_lsq = calculate_error(exact, dos_lsq, error_matrices.get<0>(), index, true);
+  if (!boost::math::isfinite(error_lsq)) {
+    lq = false;
+  }
+
+  // Least Squares uses Qd as workspace only, so compute Qd
+  normalize_q(Q, Qd);
+
+  // GTH method
+  bool gth = calculate_dos_gth(Qd, dos_gth);
+  double error_gth = calculate_error(exact, dos_gth, error_matrices.get<1>(), index, false);
+
+  // GTH Method modifies Qd, so recompute
+  normalize_q(Q, Qd);
+
+  // Power method
+  bool pow = calculate_dos_power(Qd, dos_pow);
+  double error_pow = calculate_error(exact, dos_pow, error_matrices.get<2>(), index, false);
+
+  return boost::make_tuple(error_lsq, error_gth, error_pow,
+                           lq,        gth,       pow);
+}
+
+
 /* vim: set ts=2 sw=2 sts=2 tw=0 expandtab :*/
