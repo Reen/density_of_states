@@ -73,16 +73,16 @@ void LennardJonesSystem::setup_output() {
   std::string format;
   switch (sampler) {
     case 1:
-      format = "lj_%1%_%2%S_%3%R_%4%M_%6$0.2ff%7%%8%.out";
+      format = "lj_%1%_%2%S_%3%R_%4%M_%10%dr_%6$0.2ff%7%%8%.out";
       break;
     case 2:
     case 3:
     case 4:
     case 5:
-      format = "lj_%1%_%2%S_%3%R_%4%M%7%%8%.out";
+      format = "lj_%1%_%2%S_%3%R_%4%M_%10%dr%7%%8%.out";
       break;
     case 0:
-      format = "lj_%1%_%2%S_%3%R_%4%M_%5$0.2fT_%9%Sd%7%%8%.out";
+      format = "lj_%1%_%2%S_%3%R_%4%M_%10%dr_%5$0.2fT_%9%Sd%7%%8%.out";
       break;
     default:
       throw std::runtime_error("Unknown smapler");
@@ -101,6 +101,7 @@ void LennardJonesSystem::setup_output() {
       % (tag.size() > 0 ? "_" : "")
       % tag
       % boost::any_cast<size_t>(settings["schedule"])
+      % delta_r
     );
 
   out << "#";
