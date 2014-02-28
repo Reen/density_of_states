@@ -357,6 +357,7 @@ double rhab::calculate_error(const vector_double_t &exact,
      *        i.e. additionally dos[i]-log(exact[i])/log(exact[i])
      */
     double norm = 0;
+    /*
     double max  = std::numeric_limits<double>::min();
 
     for (size_t i = 0; i < dos.size(); i++) {
@@ -364,6 +365,13 @@ double rhab::calculate_error(const vector_double_t &exact,
         max = dos[i];
       }
     }
+    */
+
+    vector_double_t d(dos);
+    vector_double_t::iterator middle = d.begin()+(d.end()-d.begin())/2;
+    std::nth_element(d.begin(), middle, d.end());
+    double min(0), max(0);
+    double sub  = *middle;
 
     // calculate the norm
     for (size_t i = 0; i < dos.size(); i++) {
@@ -372,32 +380,38 @@ double rhab::calculate_error(const vector_double_t &exact,
       // visited. Having a very large max value results in the exp(foo-max)
       // to become 0
       if ((exact[i]) > 0) {
-        norm += exp(dos[i]-max);
-      }
+        norm += exp(dos[i]-sub);
 #ifdef DEBUG
-      if (!boost::math::isfinite(norm) || !boost::math::isfinite(dos[i])) {
-        std::cerr << __FILE__ << ":" << __LINE__ << " "
-                  << norm << " " << dos[i] << std::endl;
-      }
+        if (!boost::math::isfinite(norm) || !boost::math::isfinite(dos[i])
+            || !boost::math::isfinite(exp(dos[i]-sub))) {
+          std::cerr << __FILE__ << ":" << __LINE__ << " "
+                    << norm << " " << dos[i] << " " << exp(dos[i]-sub) << std::endl;
+        }
 #endif
+      }
+    }
+
+    // yeah, I know that one should not compare doubles by equal
+    if (norm == 0) {
+      norm = 1;
     }
 
     for (size_t i = 0; i < dos.size(); i++) {
       // Be careful here and do not devide by 0
       if ((exact[i]) > 0) {
-        err[i] = fabs( (exp(dos[i]-max)/norm - exact[i]) / exact[i] );
+        err[i] = fabs( (exp(dos[i]-sub)/norm - exact[i]) / exact[i] );
         sum += err[i];
         cnt ++;
-      }
-      (*error_per_bin)(index, i)(err[i]);
+        (*error_per_bin)(index, i)(err[i]);
 #ifdef DEBUG
-      if (!boost::math::isfinite(sum) || !boost::math::isfinite(exact[i])
-          || !boost::math::isfinite(err[i])) {
-        std::cerr << __FILE__ << ":" << __LINE__ << " "
-                  << sum << " " << norm << " "
-                  << dos[i] <<  " " << exact[i] << std::endl;
-      }
+        if (!boost::math::isfinite(sum) || !boost::math::isfinite(exact[i])
+            || !boost::math::isfinite(err[i])) {
+          std::cerr << __FILE__ << ":" << __LINE__ << " "
+                    << sum << " " << norm << " "
+                    << dos[i] <<  " " << exact[i] << std::endl;
+        }
 #endif
+      }
     }
   } else {
     for (size_t i = 0; i < dos.size(); i++) {
@@ -406,8 +420,8 @@ double rhab::calculate_error(const vector_double_t &exact,
         err[i] = fabs( (dos[i] - exact[i]) / exact[i] );
         sum += err[i];
         cnt ++;
+        (*error_per_bin)(index, i)(err[i]);
       }
-      (*error_per_bin)(index, i)(err[i]);
 #ifdef DEBUG
       if (!boost::math::isfinite(sum) || !boost::math::isfinite(dos[i])
           || !boost::math::isfinite(exact[i])
