@@ -68,6 +68,9 @@ private:
   // size divied by 2
   double size_half;
 
+  // bin width of energy bins
+  double bin_width;
+
   // dimensions of the box
   boost::array<double, 3> box_dimensions;
 

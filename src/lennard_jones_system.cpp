@@ -43,7 +43,7 @@ void LennardJonesSystem::set_particles(size_t N) {
 
 void LennardJonesSystem::calculate_dos_exact_norm() {
   dos_exact_norm.resize(n_bins);
-  double bin_width = (e_max-e_min)/n_bins;
+  bin_width = (e_max-e_min)/n_bins;
   double e_start = e_min + bin_width/2;
   ExactDos<double> exact_dos(epsilon, sigma, size);
 
