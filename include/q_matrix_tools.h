@@ -18,6 +18,11 @@ void normalize_q(const matrix_int_t & Q, matrix_double_t & Qd);
 void normalize(vector_double_t &vec);
 
 /**
+ * normalize_from_log
+ */
+void normalize_from_log(vector_double_t &vec);
+
+/**
  * calculate_dos_gth
  *
  * Calculate the Density of States by using the GTH Method.

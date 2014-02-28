@@ -4,6 +4,9 @@
 #include <boost/numeric/ublas/operation.hpp>
 #include <boost/math/special_functions/fpclassify.hpp>
 
+// Boost Algorithm
+#include <boost/algorithm/minmax_element.hpp>
+
 extern "C"
 {
 #include <cblas.h>
@@ -234,6 +237,19 @@ void rhab::normalize_q(const matrix_int_t & Q, matrix_double_t & Qd) {
 
 void rhab::normalize(vector_double_t &vec) {
   vec /= sum(vec);
+}
+
+void rhab::normalize_from_log(vector_double_t &vec) {
+  double sub(0), norm(0);
+  std::pair<vector_double_t::iterator, vector_double_t::iterator> mm =
+    boost::minmax_element(vec.begin(), vec.end());
+  sub = (*(mm.second) + *(mm.first))/2;
+  for (size_t i = 0; i < vec.size(); i++) {
+    norm += exp(vec[i] - sub);
+  }
+  for (size_t i = 0; i < vec.size(); i++) {
+    vec[i] = exp(vec[i] - sub) / norm;
+  }
 }
 
 bool rhab::calculate_dos_gth(matrix_double_t & inner_mat, vector_double_t &dos) {

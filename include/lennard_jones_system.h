@@ -19,9 +19,6 @@
 #include <boost/random/uniform_on_sphere.hpp>
 #include <boost/random/uniform_smallint.hpp>
 
-// Boost Algorithm
-#include <boost/algorithm/minmax_element.hpp>
-
 #include "simulation_system.h"
 #include "q_matrix_tools.h"
 #include "rhab/pbc.h"
@@ -270,13 +267,9 @@ private:
       double sub(0), norm(0);
       if (sampler.has_own_statistics()) {
         dos_wl = sampler.get_dos();
-        std::pair<vector_double_t::iterator, vector_double_t::iterator> mm =
-          boost::minmax_element(dos_wl.begin(), dos_wl.end());
-        sub = (*(mm.second) + *(mm.first))/2;
-        for (size_t i = 0; i < n_bins; i++) {
-          norm += exp(dos_wl[i] - sub);
-        }
+        normalize_from_log(dos_wl);
       }
+      normalize_from_log(dos_lsq);
       for (size_t i = 0; i < n_bins; i++) {
         final_dos_lsq(run, i) = dos_lsq[i];
         final_dos_gth(run, i) = dos_gth[i];
