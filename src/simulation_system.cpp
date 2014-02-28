@@ -4,9 +4,6 @@
 #include <sstream>
 #include <iomanip>
 
-// Boost Format
-#include <boost/format.hpp>
-
 SimulationSystem::SimulationSystem(settings_t &s)
 	: settings(s), error_matrices(&error_per_bin_lsq, &error_per_bin_gth, &error_per_bin_pow, &error_per_bin_wl) {}
 

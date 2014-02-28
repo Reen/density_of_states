@@ -6,6 +6,7 @@
 
 // C++ Standard Library
 #include <vector>
+#include <iomanip>
 
 // Boost Array
 #include <boost/array.hpp>
@@ -18,6 +19,8 @@
 #include <boost/random/uniform_on_sphere.hpp>
 #include <boost/random/uniform_smallint.hpp>
 
+// Boost Algorithm
+#include <boost/algorithm/minmax_element.hpp>
 
 #include "simulation_system.h"
 #include "q_matrix_tools.h"
@@ -161,9 +164,19 @@ private:
   template<class Sampler>
   void mc_loop() {
     size_t index2 = 1;
+
+    matrix_double_t final_dos_lsq(runs, n_bins);
+    matrix_double_t final_dos_gth(runs, n_bins);
+    matrix_double_t final_dos_pow(runs, n_bins);
+    matrix_double_t final_dos_wl(runs, n_bins);
     vector_double_t dos_lsq(Q.size1());
     vector_double_t dos_gth(Q.size1());
     vector_double_t dos_pow(Q.size1());
+    final_dos_lsq.clear();
+    final_dos_gth.clear();
+    final_dos_pow.clear();
+    final_dos_wl.clear();
+
     for (size_t run = 0; run < runs; run++) {
       // variables for error / statistics calculation
       size_t error_check_freq = error_check_f;
@@ -253,16 +266,65 @@ private:
         sampler.check(step, run);
       }
 
+      vector_double_t dos_wl;
+      double sub(0), norm(0);
+      if (sampler.has_own_statistics()) {
+        dos_wl = sampler.get_dos();
+        std::pair<vector_double_t::iterator, vector_double_t::iterator> mm =
+          boost::minmax_element(dos_wl.begin(), dos_wl.end());
+        sub = (*(mm.second) + *(mm.first))/2;
+        for (size_t i = 0; i < n_bins; i++) {
+          norm += exp(dos_wl[i] - sub);
+        }
+      }
+      for (size_t i = 0; i < n_bins; i++) {
+        final_dos_lsq(run, i) = dos_lsq[i];
+        final_dos_gth(run, i) = dos_gth[i];
+        final_dos_pow(run, i) = dos_pow[i];
+        if (sampler.has_own_statistics()) {
+          final_dos_wl(run, i) = exp(dos_wl[i] - sub) / norm;
+        }
+      }
+
       if (run+1 == index2) {
         std::ostringstream add;
         add << "# last Q/Qd matrix:\n# " << Q << "\n# " << Qd << std::endl;
         write_output(run+1, add.str());
         index2 *= 10;
+
+        write_final_dos_collection(final_dos_lsq, "lsq");
+        write_final_dos_collection(final_dos_gth, "gth");
+        write_final_dos_collection(final_dos_pow, "pow");
+        if (sampler.has_own_statistics()) {
+          write_final_dos_collection(final_dos_wl, "wl");
+        }
       }
     }
   }
 
-  //void read_exact_dos();
+  void write_final_dos_collection(const matrix_double_t& mat, std::string type) {
+    boost::format fmt(fn_template);
+    std::string fn = str( fmt % runs )+ ".dos_" + type;
+    std::ofstream ostr(fn.c_str());
+    ostr << out.str();
+    ostr << "\n# runs:        " << runs;
+    ostr << "\n#\n#";
+
+    ostr << std::setw(11) << "energy" << std::setw(14) << 1;
+    for (size_t i = 1; i < mat.size1(); ++i) {
+      ostr << std::setw(14) << (i+1);
+    }
+    ostr << std::endl;
+
+    for (size_t j = 0; j < mat.size2(); ++j) {
+      double e = e_min + j*bin_width + bin_width/2;
+      ostr << std::setw(14) << e;
+      for (size_t i = 0; i < mat.size1(); ++i) {
+        ostr << std::setw(14) << mat(i,j);
+      }
+      ostr << "\n";
+    }
+  }
 
   void setup_output();
 

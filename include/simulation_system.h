@@ -8,6 +8,9 @@
 // Boost Program Options
 #include <boost/program_options.hpp>
 
+// Boost Format
+#include <boost/format.hpp>
+
 #include "simulation_rng.h"
 #include "typedefs.h"
 #include "rhab/statistics.h"
