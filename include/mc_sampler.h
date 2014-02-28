@@ -38,6 +38,8 @@ public:
 
 	void get_parameter(double& /*param*/) const {}
 
+	const vector_double_t get_dos() const {return vector_double_t();}
+
 	double calculate_error(const vector_double_t& /*exact*/,
 						   error_mat_tuple_t /*error_matrices*/,
 						   const size_t& /*index*/) {
@@ -220,6 +222,10 @@ public:
 
 	void get_parameter(double& param) const {
 		param = ln_f;
+	}
+
+	const vector_double_t get_dos() const {
+		return g;
 	}
 
 	double calculate_error(const vector_double_t& exact,
