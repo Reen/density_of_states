@@ -318,7 +318,7 @@ private:
 
     for (size_t j = 0; j < mat.size2(); ++j) {
       double e = e_min + j*bin_width + bin_width/2;
-      ostr << std::setw(14) << e;
+      ostr << std::setw(12) << e;
       for (size_t i = 0; i < mat.size1(); ++i) {
         ostr << std::setw(14) << mat(i,j);
       }
