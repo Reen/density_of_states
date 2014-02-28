@@ -193,7 +193,7 @@ public:
 
 		// We have not explored all available states
 		// in this refinement step => return.
-		if (H.size() - countH != max_count0) {
+		if (H.size() - countH > max_count0) {
 			return;
 		}
 
@@ -280,7 +280,7 @@ public:
 			}
 		}
 
-		if (count0 == max_count0
+		if (count0 <= max_count0
 			&& count0 == count0_pre2) {
 			last_refinement_step = step;
 			H *= 0;
@@ -291,6 +291,7 @@ public:
 				use_one_t = true;
 				//std::cout << "switching to 1/t after step " << step << std::endl;
 			}
+		}
 
 #if VERBOSE == 1
 			std::cout << std::setw(15) << std::right << run
@@ -299,9 +300,9 @@ public:
 					  << std::setw(15) << std::right << count0
 					  << std::setw(15) << std::right << count0_pre1
 					  << std::setw(15) << std::right << count0_pre2
+					  << std::setw(15) << std::right << max_count0
 					  << "\n";
 #endif
-		}
 		if (step-step_pre2 > param_s * H.size()) {
 			count0_pre2 = count0_pre1;
 			step_pre2 = step;
