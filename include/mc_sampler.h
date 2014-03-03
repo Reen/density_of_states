@@ -61,6 +61,7 @@ private:
 	double beta;
 	size_t steps;
 	size_t schedule;
+	double Tmin, A, B, alpha, gamma;
 public:
 	BoltzmannSampler(boost::mt19937 &rng, const matrix_int_t&, const settings_t &settings)
 		: MCSampler(rng, settings) {
@@ -68,6 +69,11 @@ public:
 		T     = boost::any_cast<double>(settings.find("temperature")->second);
 		steps = boost::any_cast<size_t>(settings.find("steps")->second);
 		schedule = boost::any_cast<size_t>(settings.find("schedule")->second);
+		Tmin  = boost::any_cast<double>(settings.find("schedule-Tmin")->second);
+		A     = boost::any_cast<double>(settings.find("schedule-A")->second);
+		B     = boost::any_cast<double>(settings.find("schedule-B")->second);
+		alpha = boost::any_cast<double>(settings.find("schedule-alpha")->second);
+		gamma = boost::any_cast<double>(settings.find("schedule-gamma")->second);
 		beta = -1./(kB * T);
 	}
 
@@ -86,27 +92,27 @@ public:
 		switch(schedule) {
 		// Linear Schedule
 		case 1:
-			Tcur = T - ((T-0.1)/steps)*step;
+			Tcur = T - ((T-Tmin)/steps)*step;
 			break;
 		// Sine Schedule
 		case 2:
-			Tcur = T*(sin(5*2*M_PI*step/steps)+1.0)/2.;
+			Tcur = T*(sin(A*2*M_PI*step/steps)+1.0)/2.;
 			break;
 		// Log-periodic Sine Schedule
 		case 3:
-			Tcur = T*(sin(5*2*M_PI*log(step)/log(steps))+1.0)/2.;
+			Tcur = T*(sin(A*2*M_PI*log(step)/log(steps))+1.0)/2.;
 			break;
 		// exponential schedule
 		case 4:
-			Tcur = T*pow(0.99999999,step);
+			Tcur = T*pow(alpha,step);
 			break;
 		// power law
 		case 5:
-			Tcur = T*10*pow(step, -0.39);
+			Tcur = T*B*pow(step, gamma);
 			break;
 		// log schedule
 		case 6:
-			Tcur = T-(T-0.1)*log(step)/log(steps);
+			Tcur = T-(T-Tmin)*log(step)/log(steps);
 			break;
 		case 0:
 		default:

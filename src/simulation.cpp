@@ -67,7 +67,27 @@ void Simulation::parse_arguments(int argc, char *argv[]) {
 		) (
 			"schedule",
 			po::value<size_t>()->default_value(0),
-			"Temperature Schedule to use for Sampler 0:\n0 – none, 1 – Linear, 2 – Sine"
+			"Temperature Schedule to use for Sampler 0:\n0 – none, 1 – Linear, 2 – Sine,\n3 – LogSine, 4 – Exp, 5 – Pow,\n6 – Log"
+		) (
+			"schedule-Tmin",
+			po::value<double>()->default_value(0.1),
+			"Minimum temperature for schedules."
+		) (
+			"schedule-A",
+			po::value<double>()->default_value(5.0),
+			"Number of oscillations in Sine and LogSine schedule."
+		) (
+			"schedule-alpha",
+			po::value<double>()->default_value(1.0-1e-8),
+			"Exponential schedule: term alpha in alpha^t"
+		) (
+			"schedule-B",
+			po::value<double>()->default_value(10),
+			"Power law schedule: T0 * B * t**gamma"
+		) (
+			"schedule-gamma",
+			po::value<double>()->default_value(-0.39),
+			"Power law schedule: T0 * B * t**gamma"
 		) (
 			"one-over-t-c",
 			po::value<double>()->default_value(1.0),
@@ -120,6 +140,11 @@ void Simulation::parse_arguments(int argc, char *argv[]) {
 	settings["sampler"]       = vm["sampler"].as<size_t>();
 	settings["cmdline"]       = cmdline;
 	settings["schedule"]      = vm["schedule"].as<size_t>();
+	settings["schedule-Tmin"] = vm["schedule-Tmin"].as<double>();
+	settings["schedule-A"]    = vm["schedule-A"].as<double>();
+	settings["schedule-alpha"]= vm["schedule-alpha"].as<double>();
+	settings["schedule-B"]    = vm["schedule-B"].as<double>();
+	settings["schedule-gamma"]= vm["schedule-gamma"].as<double>();
 	settings["one-over-t-c"]  = vm["one-over-t-c"].as<double>();
 	settings["one-over-t-s"]  = vm["one-over-t-s"].as<size_t>();
 
