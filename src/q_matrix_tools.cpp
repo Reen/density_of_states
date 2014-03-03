@@ -341,6 +341,7 @@ double rhab::calculate_error(const vector_double_t &exact,
 
   double sum = 0.0;
   size_t cnt = 0;
+  double norm = 0;
 
   if (normalize) {
     /*
@@ -356,16 +357,6 @@ double rhab::calculate_error(const vector_double_t &exact,
      * @todo: calculate both error in density of states and entropy,
      *        i.e. additionally dos[i]-log(exact[i])/log(exact[i])
      */
-    double norm = 0;
-    /*
-    double max  = std::numeric_limits<double>::min();
-
-    for (size_t i = 0; i < dos.size(); i++) {
-      if (exact[i] > 0 && dos[i] > max) {
-        max = dos[i];
-      }
-    }
-    */
 
     vector_double_t d(dos);
     vector_double_t::iterator middle = d.begin()+(d.end()-d.begin())/2;
@@ -415,9 +406,14 @@ double rhab::calculate_error(const vector_double_t &exact,
     }
   } else {
     for (size_t i = 0; i < dos.size(); i++) {
+      if (exact[i] > 0) {
+        norm += dos[i];
+      }
+    }
+    for (size_t i = 0; i < dos.size(); i++) {
       // Be careful here and do not divide by 0
       if (exact[i] > 0) {
-        err[i] = fabs( (dos[i] - exact[i]) / exact[i] );
+        err[i] = fabs( (dos[i]/norm - exact[i]) / exact[i] );
         sum += err[i];
         cnt ++;
         (*error_per_bin)(index, i)(err[i]);
