@@ -99,7 +99,8 @@ private:
   void set_particles(size_t num_particles);
   void calculate_dos_exact_norm();
 
-  double calculate_dist_sq(const boost::array<double, 3> &a, const boost::array<double, 3> &b) {
+  double calculate_dist_sq(const boost::array<double, 3> &a,
+                           const boost::array<double, 3> &b) {
     double rsq = 0;
     for (size_t i = 0; i < a.size(); ++i) {
       double tmp = a[i] - b[i];
@@ -136,10 +137,8 @@ private:
         continue;
       }
       double rsq = calculate_dist_sq(particles[i], particles[atom]);
-      //std::cout << "rsq1: " << rsq << std::endl;
       dE -= calculate_lj_interaction_rsq(rsq);
       rsq = calculate_dist_sq(particles[i], pos_new);
-      //std::cout << "rsq2: " << rsq << std::endl;
       dE += calculate_lj_interaction_rsq(rsq);
     }
     return dE;
@@ -220,7 +219,6 @@ private:
         }
 
         if (!out_of_bounds && sampler(dE, Ei, Ej)) {
-          //lattice(i, j) *= -1;
           particles[i] = rhab::PBC::position(pos_new, box_dimensions);
           energy += dE;
         }
@@ -264,7 +262,6 @@ private:
       }
 
       vector_double_t dos_wl;
-      double sub(0), norm(0);
       if (sampler.has_own_statistics()) {
         dos_wl = sampler.get_dos();
         normalize_from_log(dos_wl);
