@@ -95,9 +95,6 @@ void SimulationSystem::write_output(size_t run, const std::string &add) {
 	std::ofstream out_wl;
 
 	open_output_file(out_main, fn);
-	open_output_file(out_lsq,  fn + ".lsq");
-	open_output_file(out_gth,  fn + ".gth");
-	open_output_file(out_pow,  fn + ".pow");
 
 	out_main << out.str();
 	out_main << "\n# runs:        " << run;
@@ -171,12 +168,17 @@ void SimulationSystem::write_output(size_t run, const std::string &add) {
 	out_main << add;
 
 	oss << "\n";
+
+	open_output_file(out_lsq,  fn + ".lsq");
+	open_output_file(out_gth,  fn + ".gth");
+	open_output_file(out_pow,  fn + ".pow");
 	write_per_bin_error_file(out_lsq, error_per_bin_lsq, oss.str());
 	write_per_bin_error_file(out_gth, error_per_bin_gth, oss.str());
 	write_per_bin_error_file(out_pow, error_per_bin_pow, oss.str());
 
 	size_t sampler = boost::any_cast<size_t>(settings["sampler"]);
 	if (sampler == 1 || sampler == 5) {
+		open_output_file(out_wl,  fn + ".wl");
 		write_per_bin_error_file(out_wl,  error_per_bin_wl,  oss.str());
 	}
 

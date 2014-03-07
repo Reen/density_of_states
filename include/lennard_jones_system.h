@@ -275,7 +275,7 @@ private:
         final_dos_gth(run, i) = dos_gth[i];
         final_dos_pow(run, i) = dos_pow[i];
         if (sampler.has_own_statistics()) {
-          final_dos_wl(run, i) = exp(dos_wl[i] - sub) / norm;
+          final_dos_wl(run, i) = dos_wl[i];
         }
       }
 
