@@ -322,7 +322,11 @@ bool rhab::calculate_dos_power(const matrix_double_t &imat, vector_double_t &t1)
     t1 /= ublas::norm_1(t1);
   } while(!iter.converged(t2.begin(), t2.end(), t1.begin(), dist));
 
-  return ( std::count_if(t2.begin(), t2.end(), boost::math::isnan<double>) == 0 );
+  bool enought_non_zero   = ( std::count_if(t2.begin(), t2.end(),
+        std::bind2nd(std::equal_to<double>(), 0.0)) > 0.8 * t2.size() );
+  bool all_entries_finite = ( std::count_if(t2.begin(), t2.end(),
+        boost::math::isfinite<double>) == (long)t2.size() );
+  return ( enought_non_zero && all_entries_finite );
 }
 
 
