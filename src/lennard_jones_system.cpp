@@ -1,6 +1,5 @@
 #include "lennard_jones_system.h"
 #include "mc_sampler.h"
-#include "rhab/exact_dos.h"
 // C++ Standard Library
 #include <iomanip>
 
@@ -42,22 +41,27 @@ void LennardJonesSystem::set_particles(size_t N) {
 }
 
 void LennardJonesSystem::calculate_dos_exact_norm() {
+  std::string format = "%1%/data/lennard_jones_2/exact_%2%.dat";
+  std::string fn = str( boost::format(format)
+      % boost::any_cast<std::string>(settings["executable_path"])
+      % n_bins
+      );
+  std::ifstream in(fn.c_str());
+
   dos_exact_norm.resize(n_bins);
+  dos_exact_norm *= 0;
   bin_width = (e_max-e_min)/n_bins;
-  double e_start = e_min + bin_width/2;
-  ExactDos<double> exact_dos(epsilon, sigma, size);
-
-  double sum = 0;
-
   for (size_t i = 0; i < n_bins; i++) {
-    double energy = e_start + i*bin_width;
-    dos_exact_norm[i] = exact_dos(energy);
-    if (i == 25) {
+    double energy;
+    double dos;
+    in >> energy >> dos;
+    if (energy > -0.07 && energy < 0.07) {
       dos_exact_norm[i] = 0;
+    } else {
+      dos_exact_norm[i] = dos;
     }
-    sum += dos_exact_norm[i];
   }
-  dos_exact_norm /= sum;
+  dos_exact_norm /= boost::numeric::ublas::sum(dos_exact_norm);
 }
 
 void LennardJonesSystem::setup_output() {
