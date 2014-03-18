@@ -19,6 +19,12 @@ public:
     var_acc_ += value*value;
   }
 
+  void operator+=(const Accumulator& other) {
+    count_    += other.count_;
+    mean_acc_ += other.mean_acc_;
+    var_acc_  += other.var_acc_;
+  }
+
   const size_t & count() const {
     return count_;
   }
@@ -33,3 +39,4 @@ public:
 
 #endif /* end of include guard: ACCUMULATOR_H_S1IRKODK */
 
+/* vim: set ts=2 sw=2 sts=2 tw=0 expandtab :*/

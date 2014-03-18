@@ -4,8 +4,20 @@
 #include <sstream>
 #include <iomanip>
 
+#ifdef USE_MPI
+#include <mpi.h>
+#endif
+
 SimulationSystem::SimulationSystem(settings_t &s)
-	: settings(s), error_matrices(&error_per_bin_lsq, &error_per_bin_gth, &error_per_bin_pow, &error_per_bin_wl) {}
+	: settings(s), error_matrices(&error_per_bin_lsq, &error_per_bin_gth, &error_per_bin_pow, &error_per_bin_wl) {
+#ifdef USE_MPI
+	MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+#else
+	world_rank = 0;
+	world_size = 1;
+#endif
+}
 
 
 void SimulationSystem::setup() {
@@ -127,31 +139,31 @@ void SimulationSystem::write_output(size_t run, const std::string &add) {
 	out_main << line;
 	for (size_t i = 0; i < error_acc.size(); i++) {
 		size_t time  = error_acc[i].step;
-		double mean_lq    = boost::accumulators::mean(error_acc[i].err1);
-		double mean_gth   = boost::accumulators::mean(error_acc[i].err2);
-		double mean_power = boost::accumulators::mean(error_acc[i].err3);
-		double mean_other = boost::accumulators::mean(error_acc[i].err4);
-		double mean_q     = boost::accumulators::mean(error_acc[i].err_q);
-		double var_lq     = boost::accumulators::variance(error_acc[i].err1);
-		double var_gth    = boost::accumulators::variance(error_acc[i].err2);
-		double var_power  = boost::accumulators::variance(error_acc[i].err3);
-		double var_other  = boost::accumulators::variance(error_acc[i].err4);
-		double var_q      = boost::accumulators::variance(error_acc[i].err_q);
-		size_t cnt_lq     = boost::accumulators::count(error_acc[i].err1);
-		size_t cnt_gth    = boost::accumulators::count(error_acc[i].err2);
-		size_t cnt_power  = boost::accumulators::count(error_acc[i].err3);
-		size_t cnt_other  = boost::accumulators::count(error_acc[i].err4);
-		size_t cnt_q      = boost::accumulators::count(error_acc[i].err_q);
-		double min_lq     = boost::accumulators::min(error_acc[i].err1);
-		double min_gth    = boost::accumulators::min(error_acc[i].err2);
-		double min_power  = boost::accumulators::min(error_acc[i].err3);
-		double min_other  = boost::accumulators::min(error_acc[i].err4);
-		double min_q      = boost::accumulators::min(error_acc[i].err_q);
-		double max_lq     = boost::accumulators::max(error_acc[i].err1);
-		double max_gth    = boost::accumulators::max(error_acc[i].err2);
-		double max_power  = boost::accumulators::max(error_acc[i].err3);
-		double max_other  = boost::accumulators::max(error_acc[i].err4);
-		double max_q      = boost::accumulators::max(error_acc[i].err_q);
+		double mean_lq    = boost::accumulators::mean(error_acc[i].err[1]);
+		double mean_gth   = boost::accumulators::mean(error_acc[i].err[2]);
+		double mean_power = boost::accumulators::mean(error_acc[i].err[3]);
+		double mean_other = boost::accumulators::mean(error_acc[i].err[4]);
+		double mean_q     = boost::accumulators::mean(error_acc[i].err[5]);
+		double var_lq     = boost::accumulators::variance(error_acc[i].err[1]);
+		double var_gth    = boost::accumulators::variance(error_acc[i].err[2]);
+		double var_power  = boost::accumulators::variance(error_acc[i].err[3]);
+		double var_other  = boost::accumulators::variance(error_acc[i].err[4]);
+		double var_q      = boost::accumulators::variance(error_acc[i].err[5]);
+		size_t cnt_lq     = boost::accumulators::count(error_acc[i].err[1]);
+		size_t cnt_gth    = boost::accumulators::count(error_acc[i].err[2]);
+		size_t cnt_power  = boost::accumulators::count(error_acc[i].err[3]);
+		size_t cnt_other  = boost::accumulators::count(error_acc[i].err[4]);
+		size_t cnt_q      = boost::accumulators::count(error_acc[i].err[5]);
+		double min_lq     = boost::accumulators::min(error_acc[i].err[1]);
+		double min_gth    = boost::accumulators::min(error_acc[i].err[2]);
+		double min_power  = boost::accumulators::min(error_acc[i].err[3]);
+		double min_other  = boost::accumulators::min(error_acc[i].err[4]);
+		double min_q      = boost::accumulators::min(error_acc[i].err[5]);
+		double max_lq     = boost::accumulators::max(error_acc[i].err[1]);
+		double max_gth    = boost::accumulators::max(error_acc[i].err[2]);
+		double max_power  = boost::accumulators::max(error_acc[i].err[3]);
+		double max_other  = boost::accumulators::max(error_acc[i].err[4]);
+		double max_q      = boost::accumulators::max(error_acc[i].err[5]);
 		//double qm_err   = error_acc[i].get<5>() / runs;
 		snprintf(line, 3000, "%15lu%15g%15g%15lu%15g%15g%15g%15g%15lu%15g%15g%15g%15g%15lu%15g%15g%15g%15g%15lu%15g%15g%15g%15g%15lu%15g%15g%15g\n", time,
 				mean_lq,    var_lq,    cnt_lq,    min_lq,    max_lq,
@@ -183,3 +195,94 @@ void SimulationSystem::write_output(size_t run, const std::string &add) {
 	}
 
 }
+
+
+
+#ifdef USE_MPI
+
+void transfer_matrix(matrix_double_t& fd, const size_t& run_from, const size_t& run_to) {
+	int rank, size;
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	MPI_Comm_size(MPI_COMM_WORLD, &size);
+	if (rank == 0) {
+		for (int i = 1; i < size; i++) {
+			vector_double_t recvbuf(fd.size2());
+			MPI_Status stts;
+			for (size_t j = run_from; j < run_to; j++) {
+				// j is not used here, we just need do do the following
+				// for (run_to-run_from) times
+				MPI_Recv((void*)recvbuf.data().begin(), recvbuf.size(),
+						MPI_DOUBLE, i, MPI_ANY_TAG, MPI_COMM_WORLD, &stts);
+				// the tag transports the acutal run
+				//std::cerr << "[" << rank << "] " << i << " " << j << " " << stts.MPI_TAG << " " << stts.MPI_SOURCE << std::endl;
+				boost::numeric::ublas::row(fd, stts.MPI_TAG) = recvbuf;
+			}
+		}
+	} else {
+		for (size_t r = run_from; r < run_to; r++) {
+			//std::cerr << "[" << rank << "] " << r << std::endl;
+			vector_double_t sendbuf(boost::numeric::ublas::row(fd, r));
+			MPI_Send((void*)sendbuf.data().begin(), sendbuf.size(),
+					MPI_DOUBLE, 0, r, MPI_COMM_WORLD);
+		}
+
+	}
+}
+
+void SimulationSystem::combine_final_dos(matrix_double_t& fd_lsq,
+		matrix_double_t& fd_gth, matrix_double_t& fd_pow,
+		matrix_double_t& fd_wl,
+		const size_t& run_from, const size_t& run_to) {
+	//std::cerr << "[" << world_rank << "] in:" << __FUNCTION__ <<":"<<__LINE__ << "\n";
+	transfer_matrix(fd_lsq, run_from, run_to);
+	MPI_Barrier(MPI_COMM_WORLD);
+	transfer_matrix(fd_gth, run_from, run_to);
+	transfer_matrix(fd_pow, run_from, run_to);
+	transfer_matrix(fd_wl,  run_from, run_to);
+	//std::cerr << "[" << world_rank << "] out:" << __FUNCTION__ <<":"<<__LINE__ << std::endl;
+}
+
+void transfer_err_matrix(error_mat_t* mat) {
+	int rank, size;
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	MPI_Comm_size(MPI_COMM_WORLD, &size);
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	if (mat->size1() == 0 || mat->size2() == 0) {
+		return;
+	}
+
+	if (rank == 0) {
+		error_mat_t tmp(mat->size1(), mat->size2());
+		MPI_Status stts;
+		std::cout << "err mat size: " << tmp.size1() << " " << tmp.size2() << " " << sizeof(rhab::Accumulator) << std::endl;
+		for (int k = 1; k < size; k++) {
+			for (size_t i = 0; i < tmp.size1(); i++) {
+				for (size_t j = 0; j < tmp.size2(); j++) {
+					MPI_Recv((void*)(&tmp(i,j)), sizeof(rhab::Accumulator),
+							MPI_BYTE, k, 13, MPI_COMM_WORLD, &stts);
+				}
+			}
+			// add the error matrix of every other node to rank 0's
+			(*mat) += tmp;
+		}
+	} else {
+		for (size_t i = 0; i < mat->size1(); i++) {
+			for (size_t j = 0; j < mat->size2(); j++) {
+				MPI_Send((void*)(&(*mat)(i,j)), sizeof(rhab::Accumulator),
+						MPI_BYTE, 0, 13, MPI_COMM_WORLD);
+			}
+		}
+		std::cout << "ERR mat size: " << mat->size1() << " " << mat->size2() << " " << sizeof(rhab::Accumulator) << std::endl;
+	}
+}
+
+void SimulationSystem::combine_err_matrix(error_mat_tuple_t error_matrices) {
+	MPI_Barrier(MPI_COMM_WORLD);
+	transfer_err_matrix(error_matrices.get<0>());
+	transfer_err_matrix(error_matrices.get<1>());
+	transfer_err_matrix(error_matrices.get<2>());
+	transfer_err_matrix(error_matrices.get<3>());
+}
+#endif
+

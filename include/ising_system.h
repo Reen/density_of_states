@@ -15,10 +15,6 @@
 #include "simulation_system.h"
 #include "q_matrix_tools.h"
 
-
-//using namespace rhab;
-
-
 class IsingSystem : public SimulationSystem {
 private:
 	typedef boost::numeric::ublas::matrix<signed char> storage_t;
@@ -60,7 +56,17 @@ private:
 	template<class Sampler>
 	void mc_loop() {
 		size_t index2 = 1;
-		for (size_t run = 0; run < runs; run++) {
+
+		size_t run_from;
+		size_t run_to;
+		assert(runs % world_size == 0);
+		run_from = (runs/world_size) *  world_rank;
+		run_to   = (runs/world_size) * (world_rank + 1);
+
+#ifdef USE_MPI
+		MPI_Barrier(MPI_COMM_WORLD);
+#endif
+		for (size_t run = run_from; run < run_to; run++) {
 			// variables for error / statistics calculation
 			size_t error_check_freq = error_check_f;
 			size_t index = 0;
@@ -110,33 +116,36 @@ private:
 					energy += dE;
 				}
 				if (step % error_check_freq == 0) {
-					error_acc[index].step = step;
+					error_acc.set_step(index, step);
 
-					double err_lq, err_gth, err_power;
-					bool   suc_lq, suc_gth, suc_power;
+					double err_lsq, err_gth, err_pow;
+					bool   suc_lsq, suc_gth, suc_pow;
 					double err_qm;
-					boost::tie(err_lq, err_gth, err_power, suc_lq, suc_gth, suc_power, err_qm) =
-						rhab::calculate_error_q(dos_exact_norm, matrix_double_t(), Q, Qd, error_matrices, index);
-					if (suc_lq) {
-						error_acc[index].err1(err_lq);
+					boost::tie(
+							err_lsq, err_gth, err_pow,
+							suc_lsq, suc_gth, suc_pow, err_qm) =
+						rhab::calculate_error_q(
+								dos_exact_norm, matrix_double_t(), Q, Qd, error_matrices, index);
+					if (suc_lsq) {
+						error_acc.push(1, index, err_lsq);
 					}
 					if (suc_gth) {
-						error_acc[index].err2(err_gth);
+						error_acc.push(2, index, err_gth);
 					}
-					if (suc_power) {
-						error_acc[index].err3(err_power);
+					if (suc_pow) {
+						error_acc.push(3, index, err_pow);
 					}
 
 					if (sampler.has_own_statistics()) {
 						double err = sampler.calculate_error(dos_exact_norm, error_matrices, index);
-						error_acc[index].err4(err);
+						error_acc.push(4, index, err);
 					}
 
 					// we only capture the parameter for the first run
 					if (sampler.has_parameter() && run == 0) {
 						double param(0.0);
 						sampler.get_parameter(param);
-						error_acc[index].wl_f = param;
+						error_acc.set_parameter(index, param);
 					}
 
 					index++;
@@ -146,14 +155,25 @@ private:
 				}
 				sampler.check(step, run);
 			}
+			error_acc.pull();
 
-			if (run+1 == index2) {
+			if (world_size == 1 && run+1 == index2) {
 				std::ostringstream add;
 				add << "# last Q/Qd matrix:\n# " << Q << "\n# " << Qd << std::endl;
 				write_output(run+1, add.str());
 				index2 *= 10;
 			}
 		}
+#ifdef USE_MPI
+		MPI_Barrier(MPI_COMM_WORLD);
+		error_acc.pull();
+		combine_err_matrix(error_matrices);
+		if (world_rank == 0) {
+			std::ostringstream add;
+			add << "# last Q/Qd matrix:\n# " << Q << "\n# " << Qd << std::endl;
+			write_output(runs, add.str());
+		}
+#endif
 	}
 
 	void read_exact_dos();
@@ -164,11 +184,12 @@ public:
 	IsingSystem(settings_t & s);
 
 	virtual boost::program_options::options_description get_program_options();
+
 	virtual void parse_arguments(boost::program_options::variables_map &vm);
 
 	virtual void setup();
 
 	virtual bool run();
 };
-
 #endif /* end of include guard: ISING_SYSTEM_H */
+

@@ -173,14 +173,22 @@ private:
     final_dos_pow.clear();
     final_dos_wl.clear();
 
-    for (size_t run = 0; run < runs; run++) {
+    size_t run_from;
+    size_t run_to;
+    assert(runs % world_size == 0);
+    run_from = (runs/world_size) *  world_rank;
+    run_to   = (runs/world_size) * (world_rank + 1);
+
+#ifdef USE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+    for (size_t run = run_from; run < run_to; run++) {
       // variables for error / statistics calculation
       size_t error_check_freq = error_check_f;
       size_t index = 0;
       // reset Q matrix
       Q *= 0;
       double energy = calculate_energy();
-      //int i, j;
 
       boost::array<double, 3> pos_new;
 
@@ -188,12 +196,10 @@ private:
       for (size_t step = 1; step <= steps; step++) {
         // select a particle at random
         size_t i = ran_particle(rng.rng);
-        //std::cout << "selected particle: " << i << std::endl;
 
         // offset
         u_sphere_dist_t::result_type offset = delta_r * u_sphere_dist(rng.rng);
         pos_new = particles[i];
-        //std::cout << "offset: " << offset[0] << " " << offset[1] << " " << offset[2] << std::endl;
 
 #ifdef DEBUG
         if (fabs(energy - calculate_energy()) > 1e-10) {
@@ -223,34 +229,37 @@ private:
           energy += dE;
         }
         if (step % error_check_freq == 0) {
-          error_acc[index].step = step;
+          error_acc.set_step(index, step);
 
-          double err_lq, err_gth, err_pow;
-          bool   suc_lq, suc_gth, suc_pow;
+          double err_lsq, err_gth, err_pow;
+          bool   suc_lsq, suc_gth, suc_pow;
           boost::tie(
-              err_lq, err_gth, err_pow,
-              suc_lq, suc_gth, suc_pow) = rhab::calculate_error_q_lj(
+              err_lsq, err_gth, err_pow,
+              suc_lsq, suc_gth, suc_pow) =
+            rhab::calculate_error_q_lj(
                 dos_exact_norm, Q, Qd, error_matrices,
                 dos_lsq, dos_gth, dos_pow, index);
-          if (suc_lq) {
-            error_acc[index].err1(err_lq);
+          if (suc_lsq) {
+            error_acc.push(1, index, err_lsq);
           }
           if (suc_gth) {
-            error_acc[index].err2(err_gth);
+            error_acc.push(2, index, err_gth);
           }
           if (suc_pow) {
-            error_acc[index].err3(err_pow);
+            error_acc.push(3, index, err_pow);
           }
+
           if (sampler.has_own_statistics()) {
             double err = sampler.calculate_error(dos_exact_norm, error_matrices, index);
-            error_acc[index].err4(err);
+            //error_acc[index].err4(err);
+            error_acc.push(4, index, err);
           }
 
           // we only capture the parameter for the first run
           if (sampler.has_parameter() && run == 0) {
             double param(0.0);
             sampler.get_parameter(param);
-            error_acc[index].wl_f = param;
+            error_acc.set_parameter(index, param);
           }
 
           index++;
@@ -260,6 +269,7 @@ private:
         }
         sampler.check(step, run);
       }
+      error_acc.pull();
 
       vector_double_t dos_wl;
       if (sampler.has_own_statistics()) {
@@ -276,7 +286,7 @@ private:
         }
       }
 
-      if (run+1 == index2) {
+      if (world_size == 1 && run+1 == index2) {
         std::ostringstream add;
         add << "# last Q/Qd matrix:\n# " << Q << "\n# " << Qd << std::endl;
         write_output(run+1, add.str());
@@ -290,6 +300,25 @@ private:
         }
       }
     }
+#ifdef USE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+    error_acc.pull();
+    combine_final_dos(final_dos_lsq, final_dos_gth, final_dos_pow, final_dos_wl, run_from, run_to);
+    combine_err_matrix(error_matrices);
+    if (world_rank == 0) {
+      std::ostringstream add;
+      add << "# last Q/Qd matrix:\n# " << Q << "\n# " << Qd << std::endl;
+      write_output(runs, add.str());
+
+      write_final_dos_collection(final_dos_lsq, "lsq");
+      write_final_dos_collection(final_dos_gth, "gth");
+      write_final_dos_collection(final_dos_pow, "pow");
+      if (std::accumulate(final_dos_wl.data().begin(),
+                          final_dos_wl.data().end(), 0.0) > 0.0) {
+        write_final_dos_collection(final_dos_wl, "wl");
+      }
+    }
+#endif
   }
 
   void write_final_dos_collection(const matrix_double_t& mat, std::string type) {

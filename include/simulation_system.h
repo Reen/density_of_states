@@ -4,6 +4,7 @@
 
 // C++ Standard Library
 #include <fstream>
+#include <numeric>
 
 // Boost Program Options
 #include <boost/program_options.hpp>
@@ -18,7 +19,7 @@
 class SimulationSystem {
 protected:
 	//! type of error accumulator array
-	typedef std::vector< rhab::StepStatistics > error_acc_t;
+	typedef rhab::ErrorAcc error_acc_t;
 
 	//! Map of std::string <-> boost::any
 	settings_t &settings;
@@ -68,6 +69,12 @@ protected:
 	//! Tuple with pointers to error_per_bin_pow, error_per_bin_gth & error_per_bin_lsq
 	error_mat_tuple_t error_matrices;
 
+	//! rank inside MPI_COMM_WORLD
+	int world_rank;
+
+	//! size of MPI_COMM_WORLD
+	int world_size;
+
 	virtual void setup_output() = 0;
 	void open_output_file(std::ofstream& o, const std::string& fn);
 	virtual void write_header(std::ofstream& o);
@@ -80,6 +87,13 @@ public:
 	virtual bool run() = 0;
 	virtual void setup();
 	virtual void write_output(size_t run, const std::string &add);
+
+#ifdef USE_MPI
+	void combine_final_dos(matrix_double_t&, matrix_double_t&,
+			matrix_double_t&, matrix_double_t&,
+			const size_t&, const size_t&);
+	void combine_err_matrix(error_mat_tuple_t error_matrices);
+#endif
 
 	SimulationRNG rng;
 

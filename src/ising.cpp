@@ -17,6 +17,10 @@
 
 #include "config.h"
 
+#ifdef USE_MPI
+#include <mpi.h>
+#endif
+
 void my_terminate(void);
 
 namespace {
@@ -63,6 +67,13 @@ void my_terminate() {
 
 int main(int argc, char *argv[])
 {
+#ifdef USE_MPI
+	MPI_Init(&argc, &argv);
+#endif
 	Simulation s;
-	return s.exec(argc, argv);
+	int ret = s.exec(argc, argv);
+#ifdef USE_MPI
+	MPI_Finalize();
+#endif
+	return ret;
 }

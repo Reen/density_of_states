@@ -76,11 +76,22 @@ private:
 	void mc_loop() {
 		boost::uniform_int<> select_pos(0,connections-1);
 		size_t index2 = 1;
-		for (size_t run = 0; run < runs; run++) {
-			error_check_f = 100;
+
+		size_t run_from;
+		size_t run_to;
+		assert(runs % world_size == 0);
+		run_from = (runs/world_size) *  world_rank;
+		run_to   = (runs/world_size) * (world_rank + 1);
+
+#ifdef USE_MPI
+		MPI_Barrier(MPI_COMM_WORLD);
+#endif
+		for (size_t run = run_from; run < run_to; run++) {
+			// variables for error / statistics calculation
+			size_t error_check_freq = error_check_f;
+			size_t index = 0;
 			// start at random position
 			size_t state = select_pos(rng.rng);
-			size_t index = 0;
 			// reset Q matrix
 			Q *= 0;
 			Sampler sampler(rng.rng, Q, settings);
@@ -93,56 +104,71 @@ private:
 				if (sampler(Enew-Eold, Eold, Enew)) {
 					state = new_state;
 				}
-				if (step > 0 && step % error_check_f == 0) {
-					error_acc[index].step = step;
+				if (step % error_check_freq == 0) {
+					error_acc.set_step(index, step);
 
-					double err_lq, err_gth, err_power;
-					bool   suc_lq, suc_gth, suc_power;
+					double err_lsq, err_gth, err_pow;
+					bool   suc_lsq, suc_gth, suc_pow;
 					double err_qm;
-					boost::tie(err_lq, err_gth, err_power, suc_lq, suc_gth, suc_power, err_qm) =
-						rhab::calculate_error_q(dos_exact_norm, exact_q, Q, Qd, error_matrices, index);
-					if (suc_lq) {
-						error_acc[index].err1(err_lq);
+					boost::tie(
+							err_lsq, err_gth, err_pow,
+							suc_lsq, suc_gth, suc_pow, err_qm) =
+						rhab::calculate_error_q(
+								dos_exact_norm, exact_q, Q, Qd, error_matrices, index);
+					if (suc_lsq) {
+						error_acc.push(1, index, err_lsq);
 					}
 					if (suc_gth) {
-						error_acc[index].err2(err_gth);
+						error_acc.push(2, index, err_gth);
 					}
-					if (suc_power) {
-						error_acc[index].err3(err_power);
+					if (suc_pow) {
+						error_acc.push(3, index, err_pow);
 					}
 
 					if (sampler.has_own_statistics()) {
 						double err = sampler.calculate_error(dos_exact_norm, error_matrices, index);
-						error_acc[index].err4(err);
+						error_acc.push(4, index, err);
 					}
 
 					// we only capture the parameter for the first run
 					if (sampler.has_parameter() && run == 0) {
 						double param(0.0);
 						sampler.get_parameter(param);
-						error_acc[index].wl_f = param;
+						error_acc.set_parameter(index, param);
 					}
 
-					error_acc[index].err_q(err_qm);
+					error_acc.push(5, index, err_qm);
 
 					index++;
-					if (step % (10*error_check_f) == 0) {
-						error_check_f *= 10;
+					if (step % (10*error_check_freq) == 0) {
+						error_check_freq *= 10;
 					}
 				}
 				sampler.check(step, run);
 			}
+			error_acc.pull();
 
-			if (run+1 == index2) {
+			if (world_size == 1 && run+1 == index2) {
 				std::ostringstream add;
 				add << "# last Q/Qd matrix:\n# " << Q << "\n# " << Qd << std::endl;
 				write_output(run+1, add.str());
 				index2 *= 10;
 			}
 		}
+#ifdef USE_MPI
+		MPI_Barrier(MPI_COMM_WORLD);
+		error_acc.pull();
+		combine_err_matrix(error_matrices);
+		if (world_rank == 0) {
+			std::ostringstream add;
+			add << "# last Q/Qd matrix:\n# " << Q << "\n# " << Qd << std::endl;
+			write_output(runs, add.str());
+		}
+#endif
 	}
 
 	void setup_output();
+
 public:
 	ToyDosSystem(settings_t &s);
 

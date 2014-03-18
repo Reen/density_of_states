@@ -45,6 +45,9 @@ find_package ( GSL REQUIRED )
 
 include_directories( ${Boost_INCLUDE_DIRS} )
 
+find_package ( MPI )
+include_directories(${MPI_INCLUDE_PATH})
+
 # TARGET: ising ###############
 add_executable( ising ising.cpp simulation.cpp simulation_rng.cpp q_matrix_tools.cpp ising_system.cpp simulation_system.cpp toydos_system.cpp lennard_jones_system.cpp ${SOURCES_GENERAL} )
 target_link_libraries( ising ${Boost_LIBRARIES} ${GSL_LIBRARIES})
@@ -52,6 +55,16 @@ target_link_libraries( ising ${Boost_LIBRARIES} ${GSL_LIBRARIES})
 set_property(TARGET ising PROPERTY OUTPUT_NAME_DEBUG "ising_debug")
 set_property(TARGET ising PROPERTY DEBUG_OUTPUT_NAME "ising_debug")
 set_property(TARGET ising PROPERTY RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}")
+
+if(MPI_FOUND)
+	add_executable( ising_mpi ising.cpp simulation.cpp simulation_rng.cpp q_matrix_tools.cpp ising_system.cpp simulation_system.cpp toydos_system.cpp lennard_jones_system.cpp ${SOURCES_GENERAL} )
+	target_link_libraries( ising_mpi ${Boost_LIBRARIES} ${GSL_LIBRARIES} ${MPI_LIBRARIES} )
+	set_property(TARGET ising_mpi PROPERTY COMPILE_FLAGS "${CMAKE_CXX_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS} -DUSE_MPI=1" )
+	set_property(TARGET ising_mpi PROPERTY LINK_FLAGS    "${CMAKE_CXX_LINK_FLAGS}    ${MPI_LINK_FLAGS}" )
+	set_property(TARGET ising_mpi PROPERTY OUTPUT_NAME_DEBUG "ising_mpi_debug")
+	set_property(TARGET ising_mpi PROPERTY DEBUG_OUTPUT_NAME "ising_mpi_debug")
+	set_property(TARGET ising_mpi PROPERTY RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}")
+endif(MPI_FOUND)
 
 # TARGET: doxygen #############
 find_package(Doxygen)
