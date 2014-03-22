@@ -227,11 +227,13 @@ bool rhab::calculate_dos_leastsquares(matrix_int_t imat, matrix_double_t &dmat, 
 
 void rhab::normalize_q(const matrix_int_t & Q, matrix_double_t & Qd) {
   using namespace boost::numeric::ublas;
-  //matrix_double_t Qd(Q);
   for (size_t i = 0; i < Q.size1(); i++) {
     double s = sum(row(Q,i));
-    if (s == 0) continue;
-    row(Qd,i) = row(Q,i)/s;
+    if (s == 0) {
+      row(Qd,i) *= 0;
+    } else {
+      row(Qd,i) = row(Q,i)/s;
+    }
   }
 }
 
