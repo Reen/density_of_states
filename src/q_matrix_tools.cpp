@@ -364,10 +364,11 @@ double rhab::calculate_error(const vector_double_t &exact,
      *        i.e. additionally dos[i]-log(exact[i])/log(exact[i])
      */
 
+    // create a copy
     vector_double_t d(dos);
+    // and find median
     vector_double_t::iterator middle = d.begin()+(d.end()-d.begin())/2;
     std::nth_element(d.begin(), middle, d.end());
-    double min(0), max(0);
     double sub  = *middle;
 
     // calculate the norm
