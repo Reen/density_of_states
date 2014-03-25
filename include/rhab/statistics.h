@@ -5,28 +5,15 @@
 #include <mpi.h>
 #endif
 
-#include <vector>
+#include "rhab/accumulator.h"
 
-// Boost Accumulator
-#include <boost/accumulators/accumulators.hpp>
-#include <boost/accumulators/statistics/stats.hpp>
-#include <boost/accumulators/statistics/min.hpp>
-#include <boost/accumulators/statistics/max.hpp>
-#include <boost/accumulators/statistics/mean.hpp>
-#include <boost/accumulators/statistics/variance.hpp>
+#include <vector>
 
 namespace rhab {
 
 struct StepStatistics {
 	size_t step;
-	boost::accumulators::accumulator_set<
-		double,
-		boost::accumulators::stats<
-			boost::accumulators::tag::min,
-			boost::accumulators::tag::max,
-			boost::accumulators::tag::mean,
-			boost::accumulators::tag::variance
-				> > err[5];
+	AccumulatorMinMax err[5];
 	double wl_f;
 };
 
@@ -37,17 +24,12 @@ private:
 
 	typedef std::vector< StepStatistics > error_vec_t;
 	error_vec_t error_acc;
-#ifdef USE_MPI
-	MPI_Request rqst;
-	MPI_Status stts;
-#endif
 
 public:
 	ErrorAcc() {
 #ifdef USE_MPI
 		MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 		MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-		rqst = MPI_REQUEST_NULL;
 #else
 		world_rank = 0;
 		world_size = 1;
@@ -55,9 +37,7 @@ public:
 	}
 
 	void resize(const size_t &sz) {
-		if (world_rank == 0) {
-			error_acc.resize(sz);
-		}
+		error_acc.resize(sz);
 	}
 
 	struct ErrEntry {
@@ -73,51 +53,47 @@ public:
 
 	// syntax err_acc.push(1, index, value)
 	void push(const size_t &n, const size_t &idx, const double &value) {
-		if (world_rank == 0) {
-			error_acc[idx].err[n](value);
-			pull();
-		} else {
-#ifdef USE_MPI
-			ErrEntry ee(n, idx, value);
-			// wait for previous request to finish
-			//MPI_Wait(&rqst, &stts);
-			// perform new non-blocking send
-			MPI_Wait(&rqst, &stts);
-			MPI_Isend(&ee, sizeof(ErrEntry), MPI_BYTE, 0, 42, MPI_COMM_WORLD, &rqst);
-#endif
-		}
+		error_acc[idx].err[n](value);
 	}
 
 	void pull() {
 #ifdef USE_MPI
 		if (world_rank == 0) {
-			int flag;
-			do {
-				MPI_Iprobe(MPI_ANY_SOURCE, 42, MPI_COMM_WORLD, &flag, &stts);
-				if (flag) {
-					ErrEntry ee;
-					MPI_Request rrqst;
-					MPI_Irecv(&ee, sizeof(ErrEntry), MPI_BYTE, stts.MPI_SOURCE, 42, MPI_COMM_WORLD, &rrqst);
-					MPI_Wait(&rrqst, MPI_STATUS_IGNORE);
-					error_acc[ee.idx].err[ee.n](ee.value);
-				} else {
-					break;
+			for (int i = 1; i < world_size; i++) {
+				MPI_Barrier(MPI_COMM_WORLD);
+				for (int j = 0; j < error_acc.size(); j++) {
+					for (int k = 0; k < 5; k++) {
+						AccumulatorMinMax tmp;
+						MPI_Recv((void*)&tmp,
+								sizeof(AccumulatorMinMax), MPI_BYTE,
+								i, 42, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+						error_acc[j].err[k] += tmp;
+					}
 				}
-			} while(true);
+			}
+		} else {
+			for (int i = 1; i < world_size; i++) {
+				MPI_Barrier(MPI_COMM_WORLD);
+				if (i == world_rank) {
+					for (int j = 0; j < error_acc.size(); j++) {
+						for (int k = 0; k < 5; k++) {
+							MPI_Send((void*)&(error_acc[j].err[k]),
+									sizeof(AccumulatorMinMax), MPI_BYTE,
+									0, 42, MPI_COMM_WORLD);
+						}
+					}
+				}
+			}
 		}
 #endif
 	}
 
 	void set_step(const size_t &index, const size_t &step) {
-		if (world_rank == 0) {
-			error_acc[index].step = step;
-		}
+		error_acc[index].step = step;
 	}
 
 	void set_parameter(const size_t &index, const double &param) {
-		if (world_rank == 0) {
-			error_acc[index].wl_f = param;
-		}
+		error_acc[index].wl_f = param;
 	}
 
 	error_vec_t::size_type size() const {

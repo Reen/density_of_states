@@ -251,7 +251,6 @@ private:
 
           if (sampler.has_own_statistics()) {
             double err = sampler.calculate_error(dos_exact_norm, error_matrices, index);
-            //error_acc[index].err4(err);
             error_acc.push(4, index, err);
           }
 
@@ -269,7 +268,6 @@ private:
         }
         sampler.check(step, run);
       }
-      error_acc.pull();
 
       vector_double_t dos_wl;
       if (sampler.has_own_statistics()) {

@@ -155,7 +155,6 @@ private:
 				}
 				sampler.check(step, run);
 			}
-			error_acc.pull();
 
 			if (world_size == 1 && run+1 == index2) {
 				std::ostringstream add;
