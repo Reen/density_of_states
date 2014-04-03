@@ -75,6 +75,9 @@ protected:
 	//! size of MPI_COMM_WORLD
 	int world_size;
 
+	//! stringstream for recording parallel seeds
+	std::ostringstream seed_out;
+
 	virtual void setup_output() = 0;
 	void open_output_file(std::ofstream& o, const std::string& fn);
 	virtual void write_header(std::ofstream& o);

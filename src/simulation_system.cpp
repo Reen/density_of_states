@@ -27,6 +27,21 @@ void SimulationSystem::setup() {
 	} else {
 		size_t seed = rng.initialize();
 		settings["seed"] = seed;
+#ifdef USE_MPI
+		size_t seedlist[world_size];
+		MPI_Barrier(MPI_COMM_WORLD);
+		if (world_rank == 0) {
+			seedlist[0] = rng.seed;
+			for (size_t i = 1; i < world_size; i++) {
+				MPI_Recv(&seedlist[i], sizeof(size_t), MPI_BYTE, i, 12345, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			}
+			for (size_t i = 0; i < world_size; i++) {
+				seed_out << "# seed[" << i << "] " << seedlist[i] << "\n";
+			}
+		} else {
+			MPI_Send(&rng.seed, sizeof(size_t), MPI_BYTE, 0, 12345, MPI_COMM_WORLD);
+		}
+#endif
 	}
 
 	try {
@@ -72,6 +87,7 @@ void SimulationSystem::write_header(std::ofstream& out) {
 	out << "# git SHA: " << g_GIT_SHA1 << std::endl;
 	out << "# cmdline: " << boost::any_cast<std::string>(settings["cmdline"]) << std::endl;
 	out << "# seed: "    << boost::any_cast<size_t>(settings["seed"]) << std::endl;
+	out << seed_out.str();
 
 }
 
