@@ -3,12 +3,16 @@
 #include "rhab/misc.h"
 
 #include <iomanip>
+#include <set>
 
 // Boost Bind
 #include <boost/bind.hpp>
 
 // Boost Format
 #include <boost/format.hpp>
+
+// Boost Random Uniform_smallint
+#include <boost/random/uniform_smallint.hpp>
 
 namespace po = boost::program_options;
 
@@ -133,10 +137,96 @@ matrix_int_t ToyDosSystem::generate_single_graph(const size_t& nconfig, const si
 			in >> row;
 			for (size_t i = 0; i < connections; i++) {
 				in >> col;
-				mt_tmp(row, i) = col;
+#ifndef NDEBUG
+				if (col < 0 || col > (int)(nconfig)-1) {
+					std::cerr << buf << std::flush;
+					throw(std::runtime_error("Error: Graph utility gave unexpected results"));
+				}
+#endif
+				mt_tmp(row, i) = col + (gengraph_seed_offset * nconfig);
 			}
+
+			// I like to keep them in order
+			std::sort(&mt_tmp(row, 0), &mt_tmp(row, connections-1));
 		}
 		pclose(fd);
+	}
+	return mt_tmp;
+}
+
+matrix_int_t ToyDosSystem::generate_multi_layer_graph() {
+	if (num_config % num_layers != 0) {
+		throw std::runtime_error("Error: number of microstates is not divisible \
+				by the number of layers. Try to set --reduce_microstates to false.");
+	}
+	matrix_int_t mt_tmp(num_config, connections);
+	size_t num_config_per_layer = num_config/num_layers;
+	for (size_t i = 0; i < num_layers; ++i) {
+		matrix_int_t mt_layer = generate_single_graph(num_config_per_layer,
+													connections, i);
+		for (size_t j = 0; j < mt_layer.size1(); j++) {
+			for (size_t k = 0; k < mt_layer.size2(); ++k) {
+				mt_tmp(j + (num_config_per_layer*i), k) = mt_layer(j, k);
+			}
+		}
+	}
+
+	boost::uniform_smallint<> state_dist(0, num_config_per_layer-1);
+	boost::uniform_smallint<> conn_dist(0, connections-1);
+
+	// combine
+	std::set<int> connected;
+	for (size_t i = 0; i < num_layers-1; ++i) {
+		// connect layer i to i+1
+
+		for (size_t j = 0; j < num_connections_between_layers; ++j) {
+			int c_fwd_i;
+			// select a microstate to start from that has
+			// not been connected to another layer yet
+			do {
+				c_fwd_i = state_dist(rng.rng)
+							+ (num_config_per_layer * i);
+				// removing the previous line leads to a star-like structure
+				// for the set of clusters
+			} while (connected.count(c_fwd_i) > 0);
+			connected.insert(c_fwd_i);
+
+			const int c_fwd_j_idx   = conn_dist(rng.rng);
+			const int c_fwd_j       = mt_tmp(c_fwd_i, c_fwd_j_idx);
+
+			const int c_bwd_i       = c_fwd_j;
+			const int c_bwd_j_idx   = std::find(&mt_tmp(c_bwd_i, 0),
+												&mt_tmp(c_bwd_i, connections-1),
+												c_fwd_i) - &mt_tmp(c_bwd_i, 0);
+
+			int c_fwd_ip1;
+			// select a microstate to start from that has
+			// not been connected to another layer yet
+			do {
+				c_fwd_ip1 = state_dist(rng.rng)
+							+ (num_config_per_layer * (i+1));
+			} while (connected.count(c_fwd_ip1) > 0);
+			connected.insert(c_fwd_ip1);
+
+			const int c_fwd_jp1_idx = conn_dist(rng.rng);
+			const int c_fwd_jp1     = mt_tmp(c_fwd_ip1, c_fwd_jp1_idx);
+
+			const int c_bwd_ip1     = c_fwd_jp1;
+			const int c_bwd_jp1_idx = std::find(&mt_tmp(c_bwd_ip1, 0),
+												&mt_tmp(c_bwd_ip1, connections-1),
+												c_fwd_ip1) - &mt_tmp(c_bwd_ip1, 0);
+
+			//std::cout << c_fwd_i << " " << c_fwd_j_idx << " " << mt_tmp(c_fwd_i, c_fwd_j_idx) << " " <<
+						//c_fwd_ip1 << " " << c_fwd_jp1_idx << " " << mt_tmp(c_fwd_ip1, c_fwd_jp1_idx) << std::endl;
+			//std::cout << c_bwd_i << " " << c_bwd_j_idx << " " << mt_tmp(c_bwd_i, c_bwd_j_idx) << " " <<
+						//c_bwd_ip1 << " " << c_bwd_jp1_idx << " " << mt_tmp(c_bwd_ip1, c_bwd_jp1_idx) << std::endl;
+			std::swap(mt_tmp(c_fwd_i, c_fwd_j_idx), mt_tmp(c_fwd_ip1, c_fwd_jp1_idx));
+			std::swap(mt_tmp(c_bwd_i, c_bwd_j_idx), mt_tmp(c_bwd_ip1, c_bwd_jp1_idx));
+			//std::cout << c_fwd_i << " " << c_fwd_j_idx << " " << mt_tmp(c_fwd_i, c_fwd_j_idx) << " " <<
+				//c_fwd_ip1 << " " << c_fwd_jp1_idx << " " << mt_tmp(c_fwd_ip1, c_fwd_jp1_idx) << std::endl;
+			//std::cout << c_bwd_i << " " << c_bwd_j_idx << " " << mt_tmp(c_bwd_i, c_bwd_j_idx) << " " <<
+				//c_bwd_ip1 << " " << c_bwd_jp1_idx << " " << mt_tmp(c_bwd_ip1, c_bwd_jp1_idx) << std::endl;
+		}
 	}
 	return mt_tmp;
 }
@@ -152,11 +242,28 @@ void ToyDosSystem::setup_variables() {
 	out << "# dos_exact_norm: " << dos_exact_norm << '\n';
 	out << "# config_to_energy: " << config_to_energy << '\n';
 
+	// @todo: check that num_config is divisible by num_layers
 	// construct microstate graph
-	mt = generate_single_graph(num_config, connections, 0);
+	if (num_layers == 1) {
+		mt = generate_single_graph(num_config, connections, 0);
+	} else {
+		mt = generate_multi_layer_graph();
+	}
 
 	out << "# mt: " << mt << std::endl;
-
+	if (print_microstate_graph) {
+		matrix_int_t microstate_tm(num_config, num_config);
+		microstate_tm.clear();
+		for (size_t i = 0; i < mt.size1(); i++) {
+			for (size_t j = 0; j < mt.size2(); j++) {
+				microstate_tm(i, mt(i,j)) = 1;//connections;
+			}
+			for (size_t j = 0; j < microstate_tm.size2(); j++) {
+				out << std::setw(2) << microstate_tm(i,j);
+			}
+			out << '\n';
+		}
+	}
 	exact_q.resize(macrostates, macrostates, false);
 	/*
 	// Variant 1: (actually produces lumper and microstate_tm
@@ -208,7 +315,6 @@ void ToyDosSystem::safety_check() {
 
 vector_int_t ToyDosSystem::get_exact_dos(size_t macro_states) {
 	// use boost vectors ?
-	int div;
 	std::vector<double> dos_exact_d(macro_states);
 	vector_int_t dos_exact_i(macro_states);
 	for (size_t i = 1; i <= macro_states; i++) {
@@ -219,8 +325,11 @@ vector_int_t ToyDosSystem::get_exact_dos(size_t macro_states) {
 	}
 	// compare _d and _i
 	// divide by GCD until GCD is 1
-	while((div = rhab::get_gcd(dos_exact_i)) != 1) {
-		dos_exact_i /= div;
+	if (reduce_microstates) {
+		int div;
+		while((div = rhab::get_gcd(dos_exact_i)) != 1) {
+			dos_exact_i /= div;
+		}
 	}
 	return dos_exact_i;
 }
@@ -282,6 +391,22 @@ po::options_description ToyDosSystem::get_program_options() {
 			"gengraph_seed",
 			po::value<int>(&gengraph_seed)->notifier(boost::bind(&ToyDosSystem::set_gengraph_seed, this, _1)),
 			"Seed for gengraph tool"
+		) (
+			"reduce_microstates",
+			po::value<bool>(&reduce_microstates)->default_value(true),
+			"Whether to reduce the number of microstates by ggT. Should be set to 0 for layers > 1."
+		) (
+			"print_microstate_graph",
+			po::value<bool>(&print_microstate_graph)->default_value(false),
+			"Whether to print the microstate graph to cout"
+		) (
+			"layers",
+			po::value<size_t>(&num_layers)->default_value(1),
+			"Number of layers into which the microstates are clustered."
+		) (
+			"layer_connections",
+			po::value<size_t>(&num_connections_between_layers)->default_value(1),
+			"Number of connections between layers"
 		);
 	return desc;
 }

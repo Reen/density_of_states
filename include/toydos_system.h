@@ -37,6 +37,18 @@ private:
 	// number of configurations
 	size_t num_config;
 
+	// whether to reduce the number of microstates by ggT
+	bool reduce_microstates;
+
+	// whether to print the microstate graph
+	bool print_microstate_graph;
+
+	// number of layers
+	size_t num_layers;
+
+	// number of connections between_layers
+	size_t num_connections_between_layers;
+
 	// exact density of states normalized
 	vector_double_t dos_exact_norm;
 
@@ -55,6 +67,7 @@ private:
 	void setup_variables();
 	void safety_check();
 	matrix_int_t generate_single_graph(const size_t&, const size_t&, const int&);
+	matrix_int_t generate_multi_layer_graph();
 
 	/**
 	 * Misc
