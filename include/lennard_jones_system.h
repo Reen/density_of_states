@@ -240,18 +240,18 @@ private:
                 dos_exact_norm, Q, Qd, error_matrices,
                 dos_lsq, dos_gth, dos_pow, index);
           if (suc_lsq) {
-            error_acc.push(1, index, err_lsq);
+            error_acc.push(0, index, err_lsq);
           }
           if (suc_gth) {
-            error_acc.push(2, index, err_gth);
+            error_acc.push(1, index, err_gth);
           }
           if (suc_pow) {
-            error_acc.push(3, index, err_pow);
+            error_acc.push(2, index, err_pow);
           }
 
           if (sampler.has_own_statistics()) {
             double err = sampler.calculate_error(dos_exact_norm, error_matrices, index);
-            error_acc.push(4, index, err);
+            error_acc.push(3, index, err);
           }
 
           // we only capture the parameter for the first run

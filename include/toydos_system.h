@@ -116,18 +116,18 @@ private:
 						rhab::calculate_error_q(
 								dos_exact_norm, exact_q, Q, Qd, error_matrices, index);
 					if (suc_lsq) {
-						error_acc.push(1, index, err_lsq);
+						error_acc.push(0, index, err_lsq);
 					}
 					if (suc_gth) {
-						error_acc.push(2, index, err_gth);
+						error_acc.push(1, index, err_gth);
 					}
 					if (suc_pow) {
-						error_acc.push(3, index, err_pow);
+						error_acc.push(2, index, err_pow);
 					}
 
 					if (sampler.has_own_statistics()) {
 						double err = sampler.calculate_error(dos_exact_norm, error_matrices, index);
-						error_acc.push(4, index, err);
+						error_acc.push(3, index, err);
 					}
 
 					// we only capture the parameter for the first run
@@ -137,7 +137,7 @@ private:
 						error_acc.set_parameter(index, param);
 					}
 
-					error_acc.push(5, index, err_qm);
+					error_acc.push(4, index, err_qm);
 
 					index++;
 					if (step % (10*error_check_freq) == 0) {
