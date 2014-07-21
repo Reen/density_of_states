@@ -57,6 +57,10 @@ private:
 	void mc_loop() {
 		size_t index2 = 1;
 
+		vector_double_t dos_lsq(Q.size1());
+		vector_double_t dos_gth(Q.size1());
+		vector_double_t dos_pow(Q.size1());
+
 		size_t run_from;
 		size_t run_to;
 		assert(runs % world_size == 0);
@@ -125,7 +129,8 @@ private:
 							err_lsq, err_gth, err_pow,
 							suc_lsq, suc_gth, suc_pow, err_qm) =
 						rhab::calculate_error_q(
-								dos_exact_norm, matrix_double_t(), Q, Qd, error_matrices, index);
+								dos_exact_norm, matrix_double_t(), Q, Qd, error_matrices,
+								dos_lsq, dos_gth, dos_pow, index);
 					if (suc_lsq) {
 						error_acc.push(0, index, err_lsq);
 					}

@@ -59,9 +59,14 @@ double calculate_error_q_matrix(const matrix_double_t &Qex, const matrix_double_
  * calculate_error_q
  */
 boost::tuple<double, double, double, bool, bool, bool, double>
-calculate_error_q(const vector_double_t &exact, const matrix_double_t &Qexact,
+calculate_error_q(const vector_double_t &exact,
+                  const matrix_double_t &Qexact,
                   const matrix_int_t &Q, matrix_double_t &Qd,
-                  error_mat_tuple_t error_matrices, const size_t& index);
+                  error_mat_tuple_t error_matrices,
+                  vector_double_t &dos_lsq,
+                  vector_double_t &dos_gth,
+                  vector_double_t &dos_pow,
+                  const size_t& index);
 
 /**
  * calculate_error_q_lj

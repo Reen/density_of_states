@@ -453,24 +453,28 @@ double rhab::calculate_error_q_matrix(const matrix_double_t &Qex, const matrix_d
 }
 
 boost::tuple<double, double, double, bool, bool, bool, double>
-rhab::calculate_error_q(const vector_double_t &exact, const matrix_double_t &Qexact,
+rhab::calculate_error_q(const vector_double_t &exact,
+                        const matrix_double_t &Qexact,
                         const matrix_int_t &Q, matrix_double_t &Qd,
                         error_mat_tuple_t error_matrices,
+                        vector_double_t &dos_lsq,
+                        vector_double_t &dos_gth,
+                        vector_double_t &dos_pow,
                         const size_t& index) {
-  vector_double_t dos(Q.size1());
-  std::fill(dos.begin(), dos.end(), 0.0);
+  std::fill(dos_lsq.begin(), dos_lsq.end(), 0.0);
+  std::fill(dos_gth.begin(), dos_gth.end(), 0.0);
+  std::fill(dos_pow.begin(), dos_pow.end(), 0.0);
 
   // Least Squares
-  bool lq = calculate_dos_leastsquares(Q, Qd, dos);
+  bool lq = calculate_dos_leastsquares(Q, Qd, dos_lsq);
   //bool lq = calculate_dos_minimization(Q, Qd, dos);
-  double error_lsq = calculate_error(exact, dos, error_matrices.get<0>(), index, true);
+  double error_lsq = calculate_error(exact, dos_lsq, error_matrices.get<0>(), index, true);
   if (!boost::math::isfinite(error_lsq)) {
     lq = false;
   }
 
   // Least Squares uses Qd as workspace only, so compute Qd
   normalize_q(Q, Qd);
-  std::fill(dos.begin(), dos.end(), 0.0);
 
   // calculate error in Q matrix
   double q_error = 0;
@@ -479,18 +483,19 @@ rhab::calculate_error_q(const vector_double_t &exact, const matrix_double_t &Qex
   }
 
   // GTH method
-  bool gth = calculate_dos_gth(Qd, dos);
-  double error_gth = calculate_error(exact, dos, error_matrices.get<1>(), index, false);
+  bool gth = calculate_dos_gth(Qd, dos_gth);
+  double error_gth = calculate_error(exact, dos_gth, error_matrices.get<1>(), index, false);
 
   // GTH Method modifies Qd, so recompute
   normalize_q(Q, Qd);
-  std::fill(dos.begin(), dos.end(), 0.0);
 
   // Power method
-  bool pow = calculate_dos_power(Qd, dos);
-  double error_pow = calculate_error(exact, dos, error_matrices.get<2>(), index, false);
+  bool pow = calculate_dos_power(Qd, dos_pow);
+  double error_pow = calculate_error(exact, dos_pow, error_matrices.get<2>(), index, false);
 
-  return boost::make_tuple(error_lsq, error_gth, error_pow, lq, gth, pow, q_error);
+  return boost::make_tuple(error_lsq, error_gth, error_pow,
+                           lq,        gth,       pow,
+                           q_error);
 }
 
 boost::tuple<double, double, double, bool,  bool,   bool>
