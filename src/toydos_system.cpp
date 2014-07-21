@@ -91,30 +91,21 @@ void ToyDosSystem::setup_output() {
 	out << "\n# one-over-t-s: " << boost::any_cast<size_t>(settings["one-over-t-s"]);
 }
 
-void ToyDosSystem::setup_variables() {
-	// calculate an exact density of states
-	dos_exact = get_exact_dos(macrostates);
-	num_config = sum(dos_exact);
-	dos_exact_norm = dos_exact / static_cast<double>(num_config);
-	config_to_energy = get_energy_map(dos_exact, num_config);
 
-	out << "# dos_exact: " << dos_exact << '\n';
-	out << "# dos_exact_norm: " << dos_exact_norm << '\n';
-	out << "# config_to_energy: " << config_to_energy << '\n';
-
-	// construct microstate graph
-	mt.resize(num_config, connections, false);
-	if (connections + 1 == num_config) {
-		// short circuit around gengraph in case number of connections is num_config-1
-		// gengraph is not able to generate such graphs before the heat death of the universe
-		// all nodes simply have connection to all other nodes
-		for (size_t i = 0; i < mt.size1(); i++) {
+matrix_int_t ToyDosSystem::generate_single_graph(const size_t& nconfig, const size_t& conn, const int& gengraph_seed_offset) {
+	matrix_int_t mt_tmp(nconfig, conn);
+	if (conn + 1 == nconfig) {
+		// Short circuit around \verb!gengraph! in case the number of connections is
+		// nconfig-1. \verb!gengraph! is then not able to generate such graphs
+		// before the heat death of the universe.
+		// All nodes simply have connection to all other nodes.
+		for (size_t i = 0; i < mt_tmp.size1(); i++) {
 			size_t k = 0;
-			for (size_t j = 0; j < mt.size2(); j++) {
+			for (size_t j = 0; j < mt_tmp.size2(); j++) {
 				if (k == i) {
 					k++;
 				}
-				mt(i,j) = k++;
+				mt_tmp(i,j) = k++;
 			}
 		}
 	} else {
@@ -125,7 +116,8 @@ void ToyDosSystem::setup_variables() {
 			gengraph_seed = graph_seed_dist(rng.rng);
 		}
 		snprintf(buf, 1024, "echo %lu %lu | %s -s %i",
-				connections, num_config, graph_bin.c_str(), gengraph_seed);
+				conn, nconfig, graph_bin.c_str(),
+				gengraph_seed + gengraph_seed_offset);
 
 		out << "# " << buf << std::endl;
 		FILE* fd = popen(buf, "r");
@@ -141,11 +133,27 @@ void ToyDosSystem::setup_variables() {
 			in >> row;
 			for (size_t i = 0; i < connections; i++) {
 				in >> col;
-				mt(row, i) = col;
+				mt_tmp(row, i) = col;
 			}
 		}
 		pclose(fd);
 	}
+	return mt_tmp;
+}
+
+void ToyDosSystem::setup_variables() {
+	// calculate an exact density of states
+	dos_exact = get_exact_dos(macrostates);
+	num_config = sum(dos_exact);
+	dos_exact_norm = dos_exact / static_cast<double>(num_config);
+	config_to_energy = get_energy_map(dos_exact, num_config);
+
+	out << "# dos_exact: " << dos_exact << '\n';
+	out << "# dos_exact_norm: " << dos_exact_norm << '\n';
+	out << "# config_to_energy: " << config_to_energy << '\n';
+
+	// construct microstate graph
+	mt = generate_single_graph(num_config, connections, 0);
 
 	out << "# mt: " << mt << std::endl;
 

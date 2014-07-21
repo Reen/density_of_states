@@ -54,6 +54,7 @@ private:
 
 	void setup_variables();
 	void safety_check();
+	matrix_int_t generate_single_graph(const size_t&, const size_t&, const int&);
 
 	/**
 	 * Misc
