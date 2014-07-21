@@ -61,7 +61,7 @@ public:
 		if (world_rank == 0) {
 			for (int i = 1; i < world_size; i++) {
 				MPI_Barrier(MPI_COMM_WORLD);
-				for (int j = 0; j < error_acc.size(); j++) {
+				for (size_t j = 0; j < error_acc.size(); j++) {
 					for (int k = 0; k < 5; k++) {
 						AccumulatorMinMax tmp;
 						MPI_Recv((void*)&tmp,
@@ -75,7 +75,7 @@ public:
 			for (int i = 1; i < world_size; i++) {
 				MPI_Barrier(MPI_COMM_WORLD);
 				if (i == world_rank) {
-					for (int j = 0; j < error_acc.size(); j++) {
+					for (size_t j = 0; j < error_acc.size(); j++) {
 						for (int k = 0; k < 5; k++) {
 							MPI_Send((void*)&(error_acc[j].err[k]),
 									sizeof(AccumulatorMinMax), MPI_BYTE,

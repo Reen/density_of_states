@@ -28,14 +28,14 @@ void SimulationSystem::setup() {
 		size_t seed = rng.initialize();
 		settings["seed"] = seed;
 #ifdef USE_MPI
-		size_t seedlist[world_size];
+		std::vector<size_t> seedlist(world_size, 0);
 		MPI_Barrier(MPI_COMM_WORLD);
 		if (world_rank == 0) {
 			seedlist[0] = rng.seed;
-			for (size_t i = 1; i < world_size; i++) {
+			for (size_t i = 1; i < (size_t)world_size; i++) {
 				MPI_Recv(&seedlist[i], sizeof(size_t), MPI_BYTE, i, 12345, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 			}
-			for (size_t i = 0; i < world_size; i++) {
+			for (size_t i = 0; i < (size_t)world_size; i++) {
 				seed_out << "# seed[" << i << "] " << seedlist[i] << "\n";
 			}
 		} else {
