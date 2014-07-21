@@ -149,11 +149,15 @@ void ToyDosSystem::setup_variables() {
 
 	out << "# mt: " << mt << std::endl;
 
-	microstate_tm =  boost::numeric::ublas::zero_matrix<matrix_int_t::value_type>(num_config, num_config);
-	lumper = boost::numeric::ublas::zero_matrix<matrix_int_t::value_type>(num_config, macrostates);
+	exact_q.resize(macrostates, macrostates, false);
+	/*
+	// Variant 1: (actually produces lumper and microstate_tm
+	cmatrix_int_t microstate_tm(num_config, num_config);
+	cmatrix_int_t lumper(num_config, macrostates);
+	exact_q.resize(macrostates,macrostates,false);
 	for (size_t i = 0; i < mt.size1(); i++) {
 		for (size_t j = 0; j < mt.size2(); j++) {
-			microstate_tm(i, mt(i,j)) = 1.0;//connections;
+			microstate_tm(i, mt(i,j)) = 1;//connections;
 		}
 		if (num_config < 200) {
 			out << "# ";
@@ -162,19 +166,29 @@ void ToyDosSystem::setup_variables() {
 			}
 			out << '\n';
 		}
-		//for (size_t j = 0; j < macro_states; j++) {
-			//lumper(i, j) = (j == config_to_energy[i] ? 1 : 0);
-		//}
 		lumper(i, config_to_energy[i]) = 1;
 	}
 
-	matrix_double_t tmp = prod(trans(lumper),microstate_tm);
-	exact_q.resize(macrostates,macrostates,false);
-	rhab::normalize_q(prod(tmp,lumper), exact_q);
+	cmatrix_int_t tmp = prod(trans(lumper), microstate_tm);
+	rhab::normalize_q(prod(tmp, lumper), exact_q);
 	if (num_config < 200) {
 		out << "# microstate_tm: " << microstate_tm << '\n';
 		out << "# lumper: " << lumper << '\n';
 	}
+	out << "# exact_q: " << exact_q << std::endl;
+	*/
+
+	// variant 2:
+	matrix_int_t qq(macrostates, macrostates);
+	qq.clear();
+	for (size_t i = 0; i < mt.size1(); i++) {
+		for (size_t j = 0; j < mt.size2(); j++) {
+			qq(config_to_energy[i], config_to_energy[mt(i, j)])++;
+		}
+	}
+	exact_q.clear();
+	rhab::normalize_q(qq, exact_q);
+
 	out << "# exact_q: " << exact_q << std::endl;
 }
 

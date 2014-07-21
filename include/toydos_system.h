@@ -46,14 +46,8 @@ private:
 	// connectivity of states
 	matrix_int_t mt;
 
-	// microstate transition matrix
-	matrix_double_t microstate_tm;
-
 	// path to graph utility
 	std::string graph_bin;
-
-	// lumping matrix
-	matrix_int_t lumper;
 
 	// exact Q matrix
 	matrix_double_t exact_q;

@@ -12,9 +12,11 @@
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>
 #include <boost/numeric/ublas/io.hpp>
+#include <boost/numeric/ublas/matrix_sparse.hpp>
 
 typedef boost::numeric::ublas::vector<int> vector_int_t;
 typedef boost::numeric::ublas::vector<double> vector_double_t;
+typedef boost::numeric::ublas::compressed_matrix<int> cmatrix_int_t;
 typedef boost::numeric::ublas::matrix<int64_t> matrix_int_t;
 typedef boost::numeric::ublas::matrix<double> matrix_double_t;
 
