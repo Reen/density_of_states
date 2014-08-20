@@ -53,16 +53,16 @@ void ToyDosSystem::setup_output() {
 	std::string format;
 	switch (sampler) {
 		case 1:
-			format = "toydos_%1%_%2%S_%3%R_%4%M_%5%C_%7$0.2ff%8%%9%.out";
+			format = "toydos_%1%_%2%S_%3%R_%4%M_%5%C_%11%-%12%L_%7$0.2ff%8%%9%.out";
 			break;
 		case 2:
 		case 3:
 		case 4:
 		case 5:
-			format = "toydos_%1%_%2%S_%3%R_%4%M_%5%C%8%%9%.out";
+			format = "toydos_%1%_%2%S_%3%R_%4%M_%5%C_%11-%12%%L%8%%9%.out";
 			break;
 		case 0:
-			format = "toydos_%1%_%2%S_%3%R_%4%M_%5%C_%6$0.2fT_%10%Sd%8%%9%.out";
+			format = "toydos_%1%_%2%S_%3%R_%4%M_%5%C_%11%-%12%L_%6$0.2fT_%10%Sd%8%%9%.out";
 			break;
 		default:
 			throw std::runtime_error("Unknown smapler");
@@ -72,27 +72,37 @@ void ToyDosSystem::setup_output() {
 				boost::io::too_many_args_bit | boost::io::too_few_args_bit
 				));
 	fn_template = str( fmt
-			% sampler_string[sampler]
-			% steps
-			% "%1%"
-			% n_bins
-			% connections
-			% boost::any_cast<double>(settings["temperature"])
-			% boost::any_cast<double>(settings["flatness"])
-			% (tag.size() > 0 ? "_" : "")
-			% tag
-			% boost::any_cast<size_t>(settings["schedule"])
+			/*  1 */ % sampler_string[sampler]
+			/*  2 */ % steps
+			/*  3 */ % "%1%"
+			/*  4 */ % n_bins
+			/*  5 */ % connections
+			/*  6 */ % boost::any_cast<double>(settings["temperature"])
+			/*  7 */ % boost::any_cast<double>(settings["flatness"])
+			/*  8 */ % (tag.size() > 0 ? "_" : "")
+			/*  9 */ % tag
+			/* 10 */ % boost::any_cast<size_t>(settings["schedule"])
+			/* 11 */ % num_layers
+			/* 12 */ % num_connections_between_layers
 		);
 
 	out << "#";
-	out << "\n# sampler:      " << sampler << " - " << sampler_string[sampler];
-	out << "\n# steps:        " << steps;
-	out << "\n# n_bins:       " << n_bins;
-	out << "\n# connections:  " << connections;
-	out << "\n# temperature:  " << boost::any_cast<double>(settings["temperature"]);
-	out << "\n# flatness:     " << boost::any_cast<double>(settings["flatness"]);
-	out << "\n# one-over-t-c: " << boost::any_cast<double>(settings["one-over-t-c"]);
-	out << "\n# one-over-t-s: " << boost::any_cast<size_t>(settings["one-over-t-s"]);
+	out << "\n# sampler:        " << sampler << " - " << sampler_string[sampler];
+	out << "\n# steps:          " << steps;
+	out << "\n# n_bins:         " << n_bins;
+	out << "\n# macrostates:    " << macrostates;
+	out << "\n# connections:    " << connections;
+	out << "\n# temperature:    " << boost::any_cast<double>(settings["temperature"]);
+	out << "\n# flatness:       " << boost::any_cast<double>(settings["flatness"]);
+	out << "\n# one-over-t-c:   " << boost::any_cast<double>(settings["one-over-t-c"]);
+	out << "\n# one-over-t-s:   " << boost::any_cast<size_t>(settings["one-over-t-s"]);
+	if (gengraph_seed_set) {
+		out << "\n# grengraph_seed: " << gengraph_seed;
+	}
+	out << "\n# reduce_micro:   " << reduce_microstates;
+	out << "\n# layers:         " << num_layers;
+	out << "\n# layer_conn:     " << num_connections_between_layers;
+	out << "\n";
 }
 
 
