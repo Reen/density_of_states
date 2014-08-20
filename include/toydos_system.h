@@ -176,6 +176,13 @@ private:
 			add << "# last Q/Qd matrix:\n# " << Q << "\n# " << Qd << std::endl;
 			write_output(runs, add.str());
 		}
+#else
+		// write output in case runs \notin 10^n
+		if (run_to != index2) {
+			std::ostringstream add;
+			add << "# last Q/Qd matrix:\n# " << Q << "\n# " << Qd << std::endl;
+			write_output(run_to, add.str());
+		}
 #endif
 	}
 
