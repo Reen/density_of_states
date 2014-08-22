@@ -74,17 +74,20 @@ public:
 		} else {
 			for (int i = 1; i < world_size; i++) {
 				MPI_Barrier(MPI_COMM_WORLD);
-				if (i == world_rank) {
-					for (size_t j = 0; j < error_acc.size(); j++) {
-						for (int k = 0; k < 5; k++) {
-							MPI_Send((void*)&(error_acc[j].err[k]),
-									sizeof(AccumulatorMinMax), MPI_BYTE,
-									0, 42, MPI_COMM_WORLD);
-						}
+				if (i != world_rank) {
+					continue;
+				}
+				for (size_t j = 0; j < error_acc.size(); j++) {
+					for (int k = 0; k < 5; k++) {
+						//std::cerr << "[" << world_rank << "] " << i << " " << j << " " << k << std::endl;
+						MPI_Send((void*)&(error_acc[j].err[k]),
+								sizeof(AccumulatorMinMax), MPI_BYTE,
+								0, 42, MPI_COMM_WORLD);
 					}
 				}
 			}
 		}
+		MPI_Barrier(MPI_COMM_WORLD);
 #endif
 	}
 
