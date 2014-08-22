@@ -95,6 +95,7 @@ public:
 	void combine_final_dos(matrix_double_t&, matrix_double_t&,
 			matrix_double_t&, matrix_double_t&,
 			const size_t&, const size_t&);
+	void transfer_err_matrix(error_mat_t* mat);
 	void combine_err_matrix(error_mat_tuple_t error_matrices);
 #endif
 

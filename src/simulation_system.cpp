@@ -258,21 +258,21 @@ void SimulationSystem::combine_final_dos(matrix_double_t& fd_lsq,
 	//std::cerr << "[" << world_rank << "] out:" << __FUNCTION__ <<":"<<__LINE__ << std::endl;
 }
 
-void transfer_err_matrix(error_mat_t* mat) {
-	int rank, size;
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	MPI_Comm_size(MPI_COMM_WORLD, &size);
+void SimulationSystem::transfer_err_matrix(error_mat_t* mat) {
 	MPI_Barrier(MPI_COMM_WORLD);
 
 	if (mat->size1() == 0 || mat->size2() == 0) {
 		return;
 	}
 
-	if (rank == 0) {
+	if (world_rank == 0) {
 		error_mat_t tmp(mat->size1(), mat->size2());
 		MPI_Status stts;
 		std::cout << "err mat size: " << tmp.size1() << " " << tmp.size2() << " " << sizeof(rhab::Accumulator) << std::endl;
-		for (int k = 1; k < size; k++) {
+		// k iterates over the other nodes
+		for (int k = 1; k < world_size; k++) {
+			MPI_Barrier(MPI_COMM_WORLD);
+
 			for (size_t i = 0; i < tmp.size1(); i++) {
 				for (size_t j = 0; j < tmp.size2(); j++) {
 					MPI_Recv((void*)(&tmp(i,j)), sizeof(rhab::Accumulator),
@@ -283,13 +283,24 @@ void transfer_err_matrix(error_mat_t* mat) {
 			(*mat) += tmp;
 		}
 	} else {
-		for (size_t i = 0; i < mat->size1(); i++) {
-			for (size_t j = 0; j < mat->size2(); j++) {
-				MPI_Send((void*)(&(*mat)(i,j)), sizeof(rhab::Accumulator),
-						MPI_BYTE, 0, 13, MPI_COMM_WORLD);
+		std::cout << "ERR " << world_rank << " mat size: " << mat->size1() << " " << mat->size2() << " " << sizeof(rhab::Accumulator) << std::endl;
+		for (int k = 1; k < world_size; k++) {
+			MPI_Barrier(MPI_COMM_WORLD);
+
+			if (k != world_rank) {
+				continue;
+			}
+
+			std::cout << __LINE__ << " " << k << std::endl;
+			for (size_t i = 0; i < mat->size1(); i++) {
+				for (size_t j = 0; j < mat->size2(); j++) {
+					//std::cout << __LINE__ << " " << k << " " << i << " " << j << std::endl;
+					MPI_Send((void*)(&(*mat)(i,j)), sizeof(rhab::Accumulator),
+							MPI_BYTE, 0, 13, MPI_COMM_WORLD);
+				}
 			}
 		}
-		std::cout << "ERR mat size: " << mat->size1() << " " << mat->size2() << " " << sizeof(rhab::Accumulator) << std::endl;
+		//std::cout << __LINE__ << std::endl;
 	}
 }
 
