@@ -258,13 +258,48 @@ void SimulationSystem::combine_final_dos(matrix_double_t& fd_lsq,
 	//std::cerr << "[" << world_rank << "] out:" << __FUNCTION__ <<":"<<__LINE__ << std::endl;
 }
 
+void accumulator_reduction(void* in, void* inout, int* len, MPI_Datatype* dt) {
+	rhab::Accumulator *a, *b;
+	a = reinterpret_cast<rhab::Accumulator*>(in);
+	b = reinterpret_cast<rhab::Accumulator*>(inout);
+	for (int i = 0; i < *len; i++) {
+		b[i] += a[i];
+	}
+}
+
 void SimulationSystem::transfer_err_matrix(error_mat_t* mat) {
 	MPI_Barrier(MPI_COMM_WORLD);
+
+	// create MPI_Datatype for rhab::Accumulator
+	MPI_Datatype AccumulatorMpiType;
+	int block_lengths[3] = {1,1,1};
+	MPI_Aint displacements[3] = {0, sizeof(size_t), sizeof(size_t)+sizeof(double)};
+	MPI_Datatype typelist[3] = {MPI_UINT64_T, MPI_DOUBLE, MPI_DOUBLE};
+	MPI_Type_struct(3, block_lengths, displacements, typelist, &AccumulatorMpiType);
+	MPI_Type_commit(&AccumulatorMpiType);
+
+	// create MPI_Op for Reduction of rhab::Accumulator based on wrapper function
+	MPI_Op accumulator_reduction_op;
+	MPI_Op_create(accumulator_reduction, 0, &accumulator_reduction_op);
 
 	if (mat->size1() == 0 || mat->size2() == 0) {
 		return;
 	}
 
+	std::cout << sizeof(*mat) << std::endl;
+	for (size_t i = 0; i < mat->size1(); i++) {
+		for (size_t j = 0; j < mat->size2(); j++) {
+			if (world_rank == 0) {
+				MPI_Reduce(MPI_IN_PLACE, (void*)(&(*mat)(i,j)), 1, AccumulatorMpiType,
+						accumulator_reduction_op, 0, MPI_COMM_WORLD);
+			} else {
+				MPI_Reduce((void*)(&(*mat)(i,j)), (void*)(&(*mat)(i,j)), 1, AccumulatorMpiType,
+						accumulator_reduction_op, 0, MPI_COMM_WORLD);
+			}
+		}
+	}
+
+	/*
 	if (world_rank == 0) {
 		error_mat_t tmp(mat->size1(), mat->size2());
 		MPI_Status stts;
@@ -302,6 +337,7 @@ void SimulationSystem::transfer_err_matrix(error_mat_t* mat) {
 		}
 		//std::cout << __LINE__ << std::endl;
 	}
+	*/
 }
 
 void SimulationSystem::combine_err_matrix(error_mat_tuple_t error_matrices) {
