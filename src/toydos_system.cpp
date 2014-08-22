@@ -139,6 +139,9 @@ matrix_int_t ToyDosSystem::generate_single_graph(const size_t& nconfig,
     FILE* fd = popen(buf, "r");
     if (!fd) {
       perror("Problem with pipe");
+#ifdef USE_MPI
+      MPI_Abort(MPI_COMM_WORLD, 1);
+#endif
       throw std::runtime_error("Error: Can not execute graph utility!");
     }
     int row = 0;
@@ -160,6 +163,12 @@ matrix_int_t ToyDosSystem::generate_single_graph(const size_t& nconfig,
 
       // I like to keep them in order
       std::sort(&mt_tmp(row, 0), &mt_tmp(row, connections-1));
+    }
+    if ((size_t)(row+1) != mt_tmp.size1()) {
+#ifdef USE_MPI
+      MPI_Abort(MPI_COMM_WORLD, 1);
+#endif
+      throw std::runtime_error("Error reading graph utility results!");
     }
     pclose(fd);
   }
