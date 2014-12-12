@@ -340,21 +340,25 @@ void ToyDosSystem::safety_check() {
 
 vector_int_t ToyDosSystem::get_exact_dos(size_t macro_states) {
   // use boost vectors ?
-  std::vector<double> dos_exact_d(macro_states);
+  //std::vector<double> dos_exact_d(macro_states);
   vector_int_t dos_exact_i(macro_states);
-  for (size_t i = 1; i <= macro_states; i++) {
+  /*for (size_t i = 1; i <= macro_states; i++) {
     dos_exact_d[i-1] = (i-(macro_states+1)/2.0);
     dos_exact_d[i-1] *= dos_exact_d[i-1];
     dos_exact_d[i-1] = -dos_exact_d[i-1] + (macro_states*macro_states+2*macro_states+1)/4.0;
     dos_exact_i[i-1] = dos_exact_d[i-1];
-  }
+  }*/
   // compare _d and _i
   // divide by GCD until GCD is 1
-  if (reduce_microstates) {
+  /*if (reduce_microstates) {
     int div;
     while((div = rhab::get_gcd(dos_exact_i)) != 1) {
       dos_exact_i /= div;
     }
+  }*/
+  for (size_t i = 0; i < macro_states; i++) {
+    dos_exact_i[i] = floor(pow(3., 1.+pow(100.*i, 0.305)));
+    //std::cout << i << " " << dos_exact_i[i] << std::endl;
   }
   return dos_exact_i;
 }

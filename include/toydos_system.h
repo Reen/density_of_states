@@ -113,7 +113,7 @@ private:
 				int Enew = config_to_energy[new_state];
 				Q(Eold, Enew)++;
 				assert(new_state != state);
-				if (sampler(Enew-Eold, Eold, Enew)) {
+				if (sampler(100*(Enew-Eold), Eold, Enew)) {
 					state = new_state;
 				}
 				if (step % error_check_freq == 0) {
