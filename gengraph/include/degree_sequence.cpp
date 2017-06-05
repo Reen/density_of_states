@@ -9,9 +9,9 @@
 #include <math.h>
 #include <assert.h>
 #include <vector>
-#include <tr1/unordered_map>
+#include <unordered_map>
 
-using namespace __gnu_cxx;
+//using namespace __gnu_cxx;
 using namespace std;
 
 // shuffle an int[] randomly
